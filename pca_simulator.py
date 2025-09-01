@@ -23,6 +23,8 @@ st.markdown(
     """
     <div style='text-align: center; margin-bottom: 25px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);'>
         <h4 style='margin: 5px 0; color: white;'>La Propensión Conductual al Ahorro(PCA) - Impacto en Modelos Económicos</h4>       
+        <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
+        <p style='margin: 5px 0; font-size: 14px; color: #6c757d;'>Doctorado en Economía UCAB, 2025</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -847,7 +849,8 @@ def main():
     <div style='text-align: center; color: #666;'>
         <p><strong>Simulador PCA - Tesis Doctoral</strong></p>
         <p>Desarrollado con PLS-SEM y validación Monte Carlo</p>
-        <p>© 2025 - Modelo de Propensión Conductual al Ahorro</p>
+        <p>MSc. Jesús F. Salazar Rojas</p>
+        <p>Propensión Conductual al Ahorro (PCA) © 2025 </p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -862,7 +865,6 @@ with col2:
     st.markdown(
         """
         <div style='text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6; margin-top: 30px;'>
-            <h5 style='color: #1f77b4; margin-bottom: 8px;'> Doctor</h5>
             <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
             <p style='margin: 5px 0; font-size: 14px; color: #6c757d;'>Doctorado en Economía UCAB, 2025</p>
             <p style='margin: 8px 0 0 0; font-size: 12px; color: #6c757d;'>📧 jessalaz@ucab.edu.ve | © 2025</p>
@@ -870,6 +872,8 @@ with col2:
         """,
         unsafe_allow_html=True
     )
+
+# <h5 style='color: #1f77b4; margin-bottom: 8px;'> Doctor</h5>
 
 # Estas líneas DEBEN quedar al final
 if __name__ == "__main__":
