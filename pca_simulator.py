@@ -11,8 +11,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Configuración de la página
-st.markdown(
-    """
+st.markdown("""
     <div style='text-align: center; margin-bottom: 25px; padding: 18px; 
                 background: linear-gradient(120deg, #1a237e 0%, #283593 100%); 
                 border-radius: 14px; color: white; 
@@ -29,10 +28,9 @@ st.markdown(
         
         <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
         <p style='margin: 0; font-size: 15px;'>Doctorado en Economía, UCAB – 2025</p>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+    </div>""",
+            unsafe_allow_html=True
+            )
 
 
 # <p style='margin: 3px 0; font-size: 14px; opacity: 0.9;'>Desarrollado por: <strong>MSc. Jesús F. Salazar Rojas</strong></p>
