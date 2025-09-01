@@ -862,7 +862,7 @@ with col2:
     st.markdown(
         """
         <div style='text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6; margin-top: 30px;'>
-            <h5 style='color: #1f77b4; margin-bottom: 8px;'> Doctorando</h5>
+            <h5 style='color: #1f77b4; margin-bottom: 8px;'> Doctor</h5>
             <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
             <p style='margin: 5px 0; font-size: 14px; color: #6c757d;'>Doctorado en Economía UCAB, 2025</p>
             <p style='margin: 8px 0 0 0; font-size: 12px; color: #6c757d;'>📧 jessalaz@ucab.edu.ve | © 2025</p>
