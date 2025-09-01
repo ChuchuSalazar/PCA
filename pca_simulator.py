@@ -66,7 +66,7 @@ st.markdown("""
 html_header = """
 <div class="main-header">
     <h1 style='margin: 0; font-size: 2.5rem; font-weight: 900;'>
-        🧠 PCA Simulator v2.0 - Crisis & Bonanza
+         PCA Simulator v2.0 - Crisis & Bonanza
     </h1>
     <h3 style='margin: 1rem 0; font-size: 1.3rem; opacity: 0.9;'>
         Behavioral Propensity to Save under Economic Scenarios
@@ -74,15 +74,15 @@ html_header = """
     <hr style='margin: 1.5rem auto; width: 70%; border: 2px solid rgba(255,255,255,0.3);'>
     <div style='display: flex; justify-content: space-around; flex-wrap: wrap;'>
         <div>
-            <strong>👨‍🎓 MSc. Jesús F. Salazar Rojas</strong><br>
+            <strong>MSc. Jesús F. Salazar Rojas</strong><br>
             <em>Doctorado en Economía, UCAB – 2025</em>
         </div>
         <div>
-            <strong>📊 PLS-SEM + Monte Carlo</strong><br>
+            <strong>PLS-SEM + Monte Carlo</strong><br>
             <em>Crisis, Baseline & Bonanza Scenarios</em>
         </div>
         <div>
-            <strong>🧭 Sesgos Cognitivos</strong><br>
+            <strong>Sesgos Cognitivos</strong><br>
             <em>DH • CS • AV • SQ</em>
         </div>
     </div>
@@ -143,7 +143,7 @@ MODELOS_COEFICIENTES = {
 # Configuración de escenarios económicos
 ESCENARIOS_ECONOMICOS = {
     'baseline': {
-        'nombre': '⚖️ Línea Base',
+        'nombre': 'Línea Base',
         'descripcion': 'Condiciones económicas normales sin alteraciones externas',
         'color': '#6c5ce7',
         'factor_dh': 1.0,
@@ -153,7 +153,7 @@ ESCENARIOS_ECONOMICOS = {
         'volatilidad': 1.0
     },
     'crisis': {
-        'nombre': '🔴 Crisis (Rumores Negativos)',
+        'nombre': 'Crisis (Rumores Negativos)',
         'descripcion': 'Ambiente de incertidumbre, rumores negativos, mayor descuento hiperbólico',
         'color': '#e74c3c',
         # Mayor descuento hiperbólico (valorar más el presente)
@@ -164,7 +164,7 @@ ESCENARIOS_ECONOMICOS = {
         'volatilidad': 1.5
     },
     'bonanza': {
-        'nombre': '🟢 Bonanza (Optimismo)',
+        'nombre': ' Bonanza (Optimismo)',
         'descripcion': 'Ambiente optimista, confianza económica, menor descuento hiperbólico',
         'color': '#27ae60',
         'factor_dh': 0.7,  # Menor descuento hiperbólico (mayor paciencia)
@@ -563,7 +563,7 @@ def crear_grafico_3d_escenarios(resultados_baseline, resultados_crisis, resultad
             opacity=0.6,
             colorscale='Reds'
         ),
-        name='🔴 Crisis',
+        name='Crisis',
         hovertemplate='<b>Crisis</b><br>PSE: %{x:.3f}<br>CS: %{y:.3f}<br>PCA: %{z:.3f}<extra></extra>'
     ))
 
@@ -584,7 +584,7 @@ def crear_grafico_3d_escenarios(resultados_baseline, resultados_crisis, resultad
     ))
 
     fig.update_layout(
-        title=f'🧠 Visualización 3D: PSE vs CS vs PCA - {grupo}',
+        title=f'Visualización 3D: PSE vs CS vs PCA - {grupo}',
         scene=dict(
             xaxis_title='PSE (Perfil Socioeconómico)',
             yaxis_title='CS (Contagio Social)',
@@ -609,10 +609,10 @@ def crear_dashboard_comparativo(resultados_dict):
     fig = make_subplots(
         rows=2, cols=2,
         subplot_titles=[
-            '📊 Distribución PCA por Escenario',
-            '🧠 Variables Cognitivas Promedio',
-            '💰 Impacto en Modelos Económicos',
-            '📈 Correlaciones PSE-PCA'
+            'Distribución PCA por Escenario',
+            'Variables Cognitivas Promedio',
+            'Impacto en Modelos Económicos',
+            'Correlaciones PSE-PCA'
         ],
         specs=[[{"secondary_y": False}, {"type": "bar"}],
                [{"type": "bar"}, {"secondary_y": False}]]
@@ -694,7 +694,7 @@ def crear_dashboard_comparativo(resultados_dict):
     fig.update_layout(
         height=800,
         showlegend=True,
-        title_text="🎯 Dashboard Comparativo de Escenarios Económicos"
+        title_text="Dashboard Comparativo de Escenarios Económicos"
     )
 
     return fig
@@ -740,7 +740,7 @@ def crear_radar_chart_cognitivo(resultados_dict, grupo):
             )
         ),
         showlegend=True,
-        title=f"🧠 Radar de Sesgos Cognitivos - {grupo}",
+        title=f" Radar de Sesgos Cognitivos - {grupo}",
         height=500
     )
 
@@ -767,30 +767,30 @@ def calcular_estadisticas_avanzadas(datos):
 
 
 def main():
-    st.title("🧠 PCA Simulator v2.0 - Crisis & Bonanza Analysis")
+    st.title("PCA Simulator v2.0 - Crisis & Bonanza Analysis")
 
     # Sidebar mejorado con diseño premium
     with st.sidebar:
         st.markdown("""
         <div style='text-align: center; padding: 1rem; background: linear-gradient(45deg, #667eea 0%, #764ba2 100%); 
                     border-radius: 10px; color: white; margin-bottom: 1rem;'>
-            <h3 style='margin: 0;'>⚙️ Panel de Control</h3>
+            <h3 style='margin: 0;'> Panel de Control</h3>
             <p style='margin: 0.5rem 0 0 0; opacity: 0.9;'>Configuración Avanzada</p>
         </div>
         """, unsafe_allow_html=True)
 
         # Selección de grupo
         grupo = st.selectbox(
-            "👥 **Grupo de Análisis**",
+            "**Grupo de Análisis**",
             options=['Hah', 'Mah'],
-            format_func=lambda x: f"{'👨 Hombres Ahorradores' if x == 'Hah' else '👩 Mujeres Ahorradoras'} ({x})"
+            format_func=lambda x: f"{' Hombres Ahorradores' if x == 'Hah' else ' Mujeres Ahorradoras'} ({x})"
         )
 
         # Mostrar métricas del modelo seleccionado
         model_stats = MODELOS_COEFICIENTES[grupo]
         st.markdown(f"""
         <div class="metric-card">
-            <h4>📊 Métricas del Modelo {grupo}</h4>
+            <h4>Métricas del Modelo {grupo}</h4>
             <p><strong>R²:</strong> {model_stats['r2']:.4f}</p>
             <p><strong>RMSE:</strong> {model_stats['rmse']:.4f}</p>
             <p><strong>Correlación:</strong> {model_stats['correlation']:.4f}</p>
@@ -800,7 +800,7 @@ def main():
         st.markdown("---")
 
         # Selección de escenario con diseño visual
-        st.markdown("🎭 **Escenario Económico**")
+        st.markdown("**Escenario Económico**")
         escenario = st.radio(
             "Seleccione el contexto económico:",
             options=['baseline', 'crisis', 'bonanza'],
@@ -820,36 +820,36 @@ def main():
         st.markdown("---")
 
         # Variables socioeconómicas con valores por defecto
-        st.markdown("📊 **Variables Socioeconómicas**")
+        st.markdown(" **Variables Socioeconómicas**")
 
         pca2 = st.slider(
-            "🎂 **Edad**",
+            "**Edad**",
             min_value=1, max_value=9,
             value=DEFAULT_VALUES['edad'],
             help="Grupo etario del participante"
         )
-        st.caption(f"📍 {EDAD_LABELS[pca2]}")
+        st.caption(f" {EDAD_LABELS[pca2]}")
 
         pca4 = st.slider(
-            "🎓 **Nivel Educativo**",
+            "**Nivel Educativo**",
             min_value=1, max_value=6,
             value=DEFAULT_VALUES['educacion'],
             help="Máximo nivel educativo alcanzado"
         )
-        st.caption(f"📍 {EDUCACION_LABELS[pca4]}")
+        st.caption(f" {EDUCACION_LABELS[pca4]}")
 
         pca5 = st.slider(
-            "💰 **Nivel de Ingresos**",
+            " **Nivel de Ingresos**",
             min_value=1, max_value=6,
             value=DEFAULT_VALUES['ingresos'],
             help="Rango de ingresos mensuales en USD"
         )
-        st.caption(f"📍 {INGRESO_LABELS[pca5]}")
+        st.caption(f" {INGRESO_LABELS[pca5]}")
 
         st.markdown("---")
 
         # Parámetros de simulación
-        st.markdown("🔬 **Parámetros de Simulación**")
+        st.markdown(" **Parámetros de Simulación**")
         n_simulaciones = st.number_input(
             "Número de simulaciones Monte Carlo",
             min_value=1000, max_value=15000,
@@ -865,7 +865,7 @@ def main():
         )
 
     # Cargar datos
-    with st.spinner("🔄 Cargando base de datos..."):
+    with st.spinner(" Cargando base de datos..."):
         scores_df, items_df = cargar_datos()
 
     # Mostrar información del modelo actual
@@ -873,20 +873,20 @@ def main():
     col1, col2, col3 = st.columns([2, 1, 1])
 
     with col1:
-        st.markdown("### 📐 Modelo PLS-SEM Activo")
+        st.markdown("###  Modelo PLS-SEM Activo")
         st.code(MODELOS_COEFICIENTES[grupo]['ecuacion'], language='text')
 
         pse_calculado = calcular_pse(pca2, pca4, pca5, grupo)
-        st.info(f"💡 **PSE Calculado:** {pse_calculado:.4f}")
+        st.info(f" **PSE Calculado:** {pse_calculado:.4f}")
 
     with col2:
         st.markdown("### 👤 Perfil Actual")
-        st.metric("Grupo", f"{'👨 Hombres' if grupo == 'Hah' else '👩 Mujeres'}")
+        st.metric("Grupo", f"{' Hombres' if grupo == 'Hah' else ' Mujeres'}")
         st.metric("Edad", EDAD_LABELS[pca2])
         st.metric("Educación", EDUCACION_LABELS[pca4])
 
     with col3:
-        st.markdown("### 🎯 Contexto")
+        st.markdown("###  Contexto")
         st.metric("Ingresos", INGRESO_LABELS[pca5])
         st.metric("Escenario", escenario_info['nombre'])
         st.metric("Simulaciones", f"{n_simulaciones:,}")
@@ -897,14 +897,14 @@ def main():
 
     with col_btn2:
         if st.button(
-            f"🚀 **EJECUTAR SIMULACIÓN AVANZADA**" +
+            f" **EJECUTAR SIMULACIÓN AVANZADA**" +
             (f" - {escenario_info['nombre']}" if not analisis_comparativo else " - MULTI-ESCENARIO"),
             type="primary",
             use_container_width=True
         ):
             # Ejecutar simulación(es)
             if analisis_comparativo:
-                st.markdown("### 🔄 Ejecutando Análisis Multi-escenario...")
+                st.markdown("###  Ejecutando Análisis Multi-escenario...")
 
                 progress_bar = st.progress(0)
                 resultados_dict = {}
@@ -917,20 +917,20 @@ def main():
                     progress_bar.progress((i + 1) / 3)
 
                 st.success(
-                    f"✅ **Análisis Multi-escenario Completado:** {n_simulaciones:,} × 3 simulaciones")
+                    f" **Análisis Multi-escenario Completado:** {n_simulaciones:,} × 3 simulaciones")
 
                 # Crear tabs mejoradas
                 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-                    "🎯 Dashboard Comparativo",
-                    "🌐 Visualización 3D",
-                    "🧠 Análisis Cognitivo",
-                    "💹 Impacto Económico",
-                    "📊 Estadísticas Avanzadas",
-                    "🔬 Validación & Diagnósticos"
+                    " Dashboard Comparativo",
+                    " Visualización 3D",
+                    " Análisis Cognitivo",
+                    " Impacto Económico",
+                    " Estadísticas Avanzadas",
+                    " Validación & Diagnósticos"
                 ])
 
                 with tab1:
-                    st.markdown("### 🎯 Dashboard Comparativo de Escenarios")
+                    st.markdown("###  Dashboard Comparativo de Escenarios")
 
                     # Dashboard principal
                     fig_dashboard = crear_dashboard_comparativo(
@@ -938,7 +938,7 @@ def main():
                     st.plotly_chart(fig_dashboard, use_container_width=True)
 
                     # Métricas comparativas
-                    st.markdown("### 📈 Métricas Comparativas PCA")
+                    st.markdown("###  Métricas Comparativas PCA")
                     col1, col2, col3 = st.columns(3)
 
                     for i, (esc, col) in enumerate(zip(['baseline', 'crisis', 'bonanza'], [col1, col2, col3])):
@@ -960,7 +960,7 @@ def main():
                             """, unsafe_allow_html=True)
 
                 with tab2:
-                    st.markdown("### 🌐 Visualización 3D Multi-escenario")
+                    st.markdown("###  Visualización 3D Multi-escenario")
 
                     # Gráfico 3D
                     fig_3d = crear_grafico_3d_escenarios(
@@ -973,7 +973,7 @@ def main():
 
                     # Interpretación
                     st.markdown("""
-                    **🔍 Interpretación de la Visualización 3D:**
+                    ** Interpretación de la Visualización 3D:**
                     - **Eje X (PSE):** Perfil Socioeconómico constante por diseño
                     - **Eje Y (CS):** Contagio Social, varia significativamente entre escenarios
                     - **Eje Z (PCA):** Propensión Conductual al Ahorro, variable dependiente
@@ -982,7 +982,7 @@ def main():
 
                 with tab3:
                     st.markdown(
-                        "### 🧠 Análisis Detallado de Sesgos Cognitivos")
+                        "###  Análisis Detallado de Sesgos Cognitivos")
 
                     col1, col2 = st.columns([1, 1])
 
@@ -994,7 +994,7 @@ def main():
 
                     with col2:
                         # Tabla de cambios relativos
-                        st.markdown("#### 📊 Cambios Relativos vs Baseline")
+                        st.markdown("####  Cambios Relativos vs Baseline")
 
                         datos_cambios = []
                         baseline_vals = resultados_dict['baseline']['variables_cognitivas']
@@ -1024,17 +1024,17 @@ def main():
 
                         # Interpretaciones psicológicas
                         st.markdown("""
-                        **🧠 Interpretación Psicológica:**
+                        ** Interpretación Psicológica:**
                         
-                        - **DH (Descuento Hiperbólico):** ↗️ Crisis = mayor impaciencia
-                        - **CS (Contagio Social):** ↗️ Crisis = mayor influencia social
-                        - **AV (Aversión Pérdidas):** ↗️ Crisis = mayor miedo al riesgo
-                        - **SQ (Status Quo):** ↗️ Crisis = mayor resistencia al cambio
+                        - **DH (Descuento Hiperbólico):**  Crisis = mayor impaciencia
+                        - **CS (Contagio Social):**  Crisis = mayor influencia social
+                        - **AV (Aversión Pérdidas):** ↗ Crisis = mayor miedo al riesgo
+                        - **SQ (Status Quo):** ↗ Crisis = mayor resistencia al cambio
                         """)
 
                 with tab4:
                     st.markdown(
-                        "### 💹 Análisis de Impacto en Modelos Económicos")
+                        "###  Análisis de Impacto en Modelos Económicos")
 
                     # Análisis detallado por modelo económico
                     modelo_analizar = st.selectbox(
@@ -1066,7 +1066,7 @@ def main():
                             ))
 
                         fig_violin.update_layout(
-                            title=f'💰 Distribución de Ahorro - {MODELOS_EXTERNOS[modelo_analizar]["nombre"]}',
+                            title=f' Distribución de Ahorro - {MODELOS_EXTERNOS[modelo_analizar]["nombre"]}',
                             yaxis_title='Ahorro Proyectado',
                             height=400
                         )
@@ -1075,7 +1075,7 @@ def main():
 
                     with col2:
                         # Tabla de estadísticas del modelo
-                        st.markdown("#### 📊 Estadísticas del Modelo")
+                        st.markdown("####  Estadísticas del Modelo")
 
                         stats_modelo = []
                         for esc in ['baseline', 'crisis', 'bonanza']:
@@ -1096,7 +1096,7 @@ def main():
                                      use_container_width=True)
 
                     # Matriz de impactos todos los modelos
-                    st.markdown("#### 🎯 Matriz de Impactos Multi-modelo")
+                    st.markdown("#### Matriz de Impactos Multi-modelo")
 
                     matriz_impactos = []
                     for modelo_key, modelo_info in MODELOS_EXTERNOS.items():
@@ -1132,7 +1132,7 @@ def main():
                     st.dataframe(styled_df, use_container_width=True)
 
                 with tab5:
-                    st.markdown("### 📊 Estadísticas Descriptivas Avanzadas")
+                    st.markdown("###  Estadísticas Descriptivas Avanzadas")
 
                     # Selector de variable para análisis
                     variable_analisis = st.selectbox(
@@ -1162,7 +1162,7 @@ def main():
                             ))
 
                         fig_hist_comp.update_layout(
-                            title=f'📈 Distribución Comparativa - {variable_analisis}',
+                            title=f' Distribución Comparativa - {variable_analisis}',
                             xaxis_title=variable_analisis,
                             yaxis_title='Frecuencia',
                             barmode='overlay',
@@ -1174,7 +1174,7 @@ def main():
 
                     with col2:
                         # Tests estadísticos
-                        st.markdown("#### 🔬 Tests Estadísticos")
+                        st.markdown("####  Tests Estadísticos")
 
                         # Preparar datos para tests
                         datos_tests = {}
@@ -1183,6 +1183,7 @@ def main():
                                 datos_tests[esc] = resultados_dict[esc]['pca_values']
                             else:
                                 datos_tests[esc] = resultados_dict[esc]['variables_cognitivas'][variable_analisis]
+
 
                         # Test de normalida
 if __name__ == "__main__":
