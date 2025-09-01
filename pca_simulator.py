@@ -17,6 +17,25 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+# Configuración de la página
+st.set_page_config(
+    page_title="Simulador PCA - Impacto en Modelos Económicos",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Tarjeta de presentación del autor
+st.markdown(
+    """
+    <div style='text-align: center; margin-bottom: 25px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);'>
+        <h4 style='margin: 5px 0; color: white;'>📊 Simulador PCA - Impacto en Modelos Económicos</h4>
+        <p style='margin: 3px 0; font-size: 14px; opacity: 0.9;'>Desarrollado por: <strong>MSc. Jesús F. Salazar Rojas</strong></p>
+        <p style='margin: 0; font-size: 12px; opacity: 0.8;'>Doctorando en Economía UCAB, 2025 | © jessalaz@ucab.edu.be</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 @st.cache_data
@@ -838,6 +857,26 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
+# Tu código existente...
+# ...
 
+
+# Footer con información del autor (AGREGAR AQUÍ, ANTES del if __name__)
+st.markdown("---")
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.markdown(
+        """
+        <div style='text-align: center; padding: 15px; background-color: #f8f9fa; border-radius: 10px; border: 1px solid #dee2e6; margin-top: 30px;'>
+            <h5 style='color: #1f77b4; margin-bottom: 8px;'>👨‍🎓 Doctorando</h5>
+            <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
+            <p style='margin: 5px 0; font-size: 14px; color: #6c757d;'>Doctorado en Economía UCAB, 2025</p>
+            <p style='margin: 8px 0 0 0; font-size: 12px; color: #6c757d;'>📧 jessalaz@ucab.edu.be | © 2025</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Estas líneas DEBEN quedar al final
 if __name__ == "__main__":
     main()
