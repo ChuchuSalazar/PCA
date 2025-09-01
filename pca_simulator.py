@@ -22,7 +22,7 @@ st.set_page_config(
 st.markdown(
     """
     <div style='text-align: center; margin-bottom: 25px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);'>
-        <h4 style='margin: 5px 0; color: white;'>📊 Simulador PCA - Impacto en Modelos Económicos</h4>       
+        <h4 style='margin: 5px 0; color: white;'>La Propensión Conductual al Ahorro(PCA) - Impacto en Modelos Económicos</h4>       
     </div>
     """,
     unsafe_allow_html=True
@@ -855,7 +855,7 @@ def main():
 # ...
 
 
-# Footer con información del autor (AGREGAR AQUÍ, ANTES del if __name__)
+# Footer con información del autor (
 st.markdown("---")
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
