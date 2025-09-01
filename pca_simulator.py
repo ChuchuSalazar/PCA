@@ -409,9 +409,9 @@ def crear_grafico_dispersion(x, y, titulo, x_label, y_label):
 
 
 def main():
-    st.title("🎯 Simulador de Impacto PCA en Modelos Económicos")
+    st.title("Analytical Simulator of Behavioral Propensity to Save (PCA)")
     st.markdown(
-        "### Evaluación de la Propensión Conductual al Ahorro - Tesis Doctoral")
+        "### Assessing the Behavioral Propensity to Save: Integrating Theoretical Insights and Empirical Evidence")
 
     # Sidebar para controles
     st.sidebar.header("⚙️ Parámetros de Simulación")
