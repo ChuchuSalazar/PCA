@@ -1185,3 +1185,5 @@ def main():
                                 datos_tests[esc] = resultados_dict[esc]['variables_cognitivas'][variable_analisis]
 
                         # Test de normalida
+if __name__ == "__main__":
+    main()
