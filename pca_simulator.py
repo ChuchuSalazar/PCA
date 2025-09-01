@@ -11,24 +11,29 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # Configuración de la página
-st.set_page_config(
-    page_title="Simulador PCA - Impacto en Modelos Económicos",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Tarjeta de presentación del autor
 st.markdown(
     """
-    <div style='text-align: center; margin-bottom: 25px; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);'>
-        <h4 style='margin: 5px 0; color: white;'>La Propensión Conductual al Ahorro(PCA) - Impacto en Modelos Económicos</h4>       
+    <div style='text-align: center; margin-bottom: 25px; padding: 18px; 
+                background: linear-gradient(120deg, #1a237e 0%, #283593 100%); 
+                border-radius: 14px; color: white; 
+                box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);'>
+        
+        <h2 style='margin: 8px 0; font-size: 26px; font-weight: 800;'>
+            Propensión Conductual al Ahorro (PCA)
+        </h2>
+        <h4 style='margin: 0; font-size: 18px; font-weight: 400; opacity: 0.9;'>
+            Impacto en Modelos Económicos
+        </h4>
+        
+        <hr style='margin: 12px auto; width: 60%; border: 1px solid rgba(255,255,255,0.2);'>
+        
         <p style='margin: 0; font-weight: bold; font-size: 16px;'>MSc. Jesús F. Salazar Rojas</p>
-        <p style='margin: 0; font-weight: bold; font-size: 16px;;'>Doctorado en Economía UCAB, 2025</p>
+        <p style='margin: 0; font-size: 15px;'>Doctorado en Economía, UCAB – 2025</p>
     </div>
     """,
     unsafe_allow_html=True
 )
+
 
 # <p style='margin: 3px 0; font-size: 14px; opacity: 0.9;'>Desarrollado por: <strong>MSc. Jesús F. Salazar Rojas</strong></p>
 # <p style='margin: 0; font-size: 12px; opacity: 0.8;'>Doctorando en Economía UCAB, 2025 | © jessalaz@ucab.edu.be</p>
