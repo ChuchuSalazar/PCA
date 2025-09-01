@@ -9,7 +9,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 import os
 import warnings
 import textwrap
-from PIL import Image
+
 warnings.filterwarnings('ignore')
 
 # Configuración de la página
@@ -29,12 +29,6 @@ html = textwrap.dedent("""\
     <p style='margin: 0; font-size: 15px;'>Doctorado en Economía, UCAB – 2025</p>
 </div>
 """)
-# Cargar imágenes
-modelo_hombres = Image.open(
-    "C:\01 academico\001 Doctorado Economia UCAB\d tesis problema ahorro\5.4 experimentos\cuestionario\proyecto_encuesta\Obj 5\modelos externos\otras\hombres.png")
-modelo_mujeres = Image.open(
-    "C:\01 academico\001 Doctorado Economia UCAB\d tesis problema ahorro\5.4 experimentos\cuestionario\proyecto_encuesta\Obj 5\modelos e3xternos\otras\modelo_mujeres.png")
-# ver linea 482 carga la imagen
 
 
 st.markdown(html, unsafe_allow_html=True)
@@ -478,9 +472,6 @@ def main():
         st.metric("Edad", EDAD_LABELS[pca2])
         st.metric("Educación", EDUCACION_LABELS[pca4])
         st.metric("Ingresos", INGRESO_LABELS[pca5])
-
-    st.image(modelo_hombres, caption="Modelo Estructural - Hombres",
-             use_column_width=True)
 
     # Botón de simulación
     if st.button("🚀 Ejecutar Simulación Monte Carlo", type="primary"):
