@@ -1576,7 +1576,8 @@ def main():
                     for esc, color in [('baseline', 'blue'), ('crisis', 'red'), ('bonanza', 'green')]:
                         residuales_esc = df_residuales[df_residuales['Scenario']
                                                        == esc]['Residual']
-                        qq_data = stats.probplot(residuales_esc, dist="norm")
+                        qq_data = sp_stats.probplot(
+                            residuales_esc, dist="norm")
 
                         fig_qq.add_trace(go.Scatter(
                             x=qq_data[0][0],
