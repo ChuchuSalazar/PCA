@@ -1357,6 +1357,26 @@ def main():
                     index=list(MODELOS_EXTERNOS.keys()).index(
                         st.session_state.selected_model)
                 )
+# chu aqui
+# Mostrar información del modelo seleccionado
+                modelo_info = MODELOS_EXTERNOS[modelo_analizar]
+
+                st.markdown(f"""
+                    <div style="background-color:#f9f9f9; padding:1rem; border-radius:8px; margin:1rem 0; border:1px solid #ddd;">
+                        <h3 style="color:#2c3e50; margin-top:0;">{modelo_info['nombre']}</h3>
+                        <p><strong>Description:</strong> {modelo_info['descripcion']}</p>
+                        <p><strong>Original formula:</strong> <code>{modelo_info['original']}</code></p>
+                        <p><strong>Formula with PCA:</strong> <code>{modelo_info['con_pca']}</code></p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Mostrar parámetros como tabla
+                params_df = pd.DataFrame(
+                    list(modelo_info['parametros'].items()),
+                    columns=['Parameter', 'Value']
+                )
+                st.table(params_df)
+# termina aqui
 
                 # Update session state
                 st.session_state.selected_model = modelo_analizar
