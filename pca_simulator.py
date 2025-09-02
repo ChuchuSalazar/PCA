@@ -221,8 +221,7 @@ MODELOS_EXTERNOS = {
         'nombre': 'Carroll & Weil (1994)',
         'original': 'S = f(Y,r)',
         'con_pca': 'S = f(Y) + r(1 + φ·PCA)',
-        'descripcion': 'Growth and saving model',
-        'Ref': 'Carroll & Weil (1994)',
+        'descripcion': 'Growth and saving model, Carroll & Weil (1994)',
         'parametros': {'base_saving_rate': 0.12, 'phi': 0.2}
     },
     'deaton': {
