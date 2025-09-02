@@ -221,7 +221,8 @@ MODELOS_EXTERNOS = {
         'nombre': 'Carroll & Weil (1994)',
         'original': 'S = f(Y,r)',
         'con_pca': 'S = f(Y) + r(1 + φ·PCA)',
-        'descripcion': 'Growth and saving model:Carroll,C. & Weil,D. (1994). “Saving and Growth : A Reinterpretation.” Carnegie-Rochester Conference Series on Public Policy 40:133–92.',
+        'descripcion': 'Growth and saving model',
+        'Ref': 'Carroll & Weil (1994)',
         'parametros': {'base_saving_rate': 0.12, 'phi': 0.2}
     },
     'deaton': {
