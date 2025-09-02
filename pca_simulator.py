@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import scipy.stats as stats
+import scipy.stats as sp_stats
 from sklearn.metrics import mean_squared_error, r2_score
 import os
 import warnings
@@ -1511,7 +1511,7 @@ def main():
                             datos_tests[esc], min(5000, len(datos_tests[esc])))
                         if len(data_sample) <= 5000:
                             # Máximo 5000 para Shapiro
-                            stat, p_val = stats.shapiro(data_sample[:5000])
+                            stat, p_val = sp_stats.shapiro(data_sample[:5000])
                             test_results.append({
                                 'Test': f'Normality {esc}',
                                 'Statistic': stat,
