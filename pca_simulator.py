@@ -1525,7 +1525,7 @@ def main():
                         scenario_data = datos_tests[esc]
 
                         # Test t de Student
-                        t_stat, t_p = stats.ttest_ind(
+                        t_stat, t_p = sp_stats.ttest_ind(
                             baseline_data, scenario_data)
                         test_results.append({
                             'Test': f'T-test: Baseline vs {esc}',
@@ -1535,7 +1535,7 @@ def main():
                         })
 
                         # Test de Mann-Whitney U (no paramétrico)
-                        u_stat, u_p = stats.mannwhitneyu(
+                        u_stat, u_p = sp_stats.mannwhitneyu(
                             baseline_data, scenario_data, alternative='two-sided')
                         test_results.append({
                             'Test': f'Mann-Whitney: Baseline vs {esc}',
