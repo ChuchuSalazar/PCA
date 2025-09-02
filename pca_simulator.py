@@ -658,8 +658,8 @@ def crear_excel_completo(resultados_dict, parametros):
                     'Median': np.percentile(data, 50),
                     'Q75': np.percentile(data, 75),
                     'Max': np.max(data),
-                    'Skewness': stats.skew(data),
-                    'Kurtosis': stats.kurtosis(data),
+                    'Skewness': sp_stats.skew(data),
+                    'Kurtosis': sp_stats.kurtosis(data),
                     'CV': np.std(data) / np.mean(data) if np.mean(data) != 0 else 0
                 })
 
@@ -693,7 +693,7 @@ def crear_excel_completo(resultados_dict, parametros):
                         escenario_mean = np.mean(escenario_vals)
 
                         # Test t
-                        t_stat, p_value = stats.ttest_ind(
+                        t_stat, p_value = sp_stats.ttest_ind(
                             baseline_vals, escenario_vals)
 
                         comparaciones_data.append({
@@ -997,8 +997,8 @@ def calcular_estadisticas_avanzadas(datos):
         'mediana': np.percentile(datos, 50),
         'p75': np.percentile(datos, 75),
         'p95': np.percentile(datos, 95),
-        'asimetria': stats.skew(datos),
-        'curtosis': stats.kurtosis(datos),
+        'asimetria': sp_stats.skew(datos),
+        'curtosis': sp_stats.kurtosis(datos),
         'cv': np.std(datos) / np.mean(datos) if np.mean(datos) != 0 else 0,
         'iqr': np.percentile(datos, 75) - np.percentile(datos, 25)
     }
