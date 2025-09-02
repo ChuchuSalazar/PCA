@@ -1011,7 +1011,7 @@ def display_model_images(grupo):
             image_path = r"hombres.JPG"
             title = "Structural Model - Male Savers (Hah)"
         else:
-            image_path = r"C:\01 academico\001 Doctorado Economia UCAB\d tesis problema ahorro\01 TESIS DEFINITIVA\MODELO\modelos jpg\mujeres.JPG"
+            image_path = r"mujeres.JPG"
             title = "Structural Model - Female Savers (Mah)"
 
         if os.path.exists(image_path):
