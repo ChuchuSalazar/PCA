@@ -765,7 +765,7 @@ def display_model_images(grupo):
                 <h4 style="color: #2c3e50; text-align: center; margin-bottom: 1rem;">{title}</h4>
             </div>
             """, unsafe_allow_html=True)
-            st.image(image, caption=title, use_column_width=True)
+            st.image(image, caption=title, use_container_width=True)
         else:
             st.info(
                 "Model images not available. Please ensure structural model images are in the working directory.")
