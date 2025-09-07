@@ -378,7 +378,7 @@ def display_ucab_logo():
             # Logo centrado
             col1, col2, col3 = st.columns([1, 2, 1])
             with col2:
-                st.image(logo, use_column_width=True)
+                st.image(logo, use_container_width=True)
 
         else:
             # Fallback si no hay logo
@@ -420,7 +420,7 @@ def display_model_images(grupo):
             """,
                 unsafe_allow_html=True,
             )
-            st.image(image, caption=title, use_column_width=True)
+            st.image(image, caption=title, use_container_width=True)
         else:
             st.info(
                 "Model images not available. Please ensure structural model images are in the working directory."
