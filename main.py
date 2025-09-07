@@ -1,25 +1,40 @@
 import streamlit as st
+
 st.set_page_config(
     page_title="PCA Simulator v3.2 - Bootstrap Analysis",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded")
+    initial_sidebar_state="expanded",
+)
+
 import os
 import sys
 import numpy as np
 import pandas as pd
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+import streamlit as st
+import os
+
 from visualization.cuadrantes import crear_analisis_cuadrantes_completo
-from config.constants import MODELOS_COEFICIENTES, ESCENARIOS_ECONOMICOS, MODELOS_EXTERNOS
+from config.constants import (
+    MODELOS_COEFICIENTES,
+    ESCENARIOS_ECONOMICOS,
+    MODELOS_EXTERNOS,
+)
 from config.styles import apply_custom_styles, get_header_html
 from data.data_loader import cargar_datos
 from models.bootstrap_analysis import ejecutar_bootstrap_avanzado
 from visualization.dashboard import crear_dashboard_bootstrap_comparativo
 from visualization.charts import crear_grafico_bootstrap_diagnostics
-from visualization.charts_3d import configurar_interfaz_3d, mostrar_informacion_sesgos_escenario
+from visualization.charts_3d import (
+    configurar_interfaz_3d,
+    mostrar_informacion_sesgos_escenario,
+)
 from utils.export_utils import crear_excel_bootstrap_completo
 from utils.statistics import calcular_estadisticas_avanzadas
 from datetime import datetime
-
 
 
 # PCA Simulator v3.2 - Bootstrap Analysis - Enhanced Version COMPLETO
@@ -68,57 +83,158 @@ def main():
     grupo, escenario, n_bootstrap, analisis_comparativo = setup_sidebar()
 
     # Interfaz principal
-    main_interface(scores_df, items_df, grupo, escenario,
-                   n_bootstrap, analisis_comparativo)
+    main_interface(
+        scores_df, items_df, grupo, escenario, n_bootstrap, analisis_comparativo
+    )
 
     # Footer
     display_footer()
 
 
 def initialize_session_state():
-    """Inicializa las variables de session state"""
-    if 'resultados_dict' not in st.session_state:
+    """Inicializa las variables de session state - OPTIMIZADO"""
+    if "resultados_dict" not in st.session_state:
         st.session_state.resultados_dict = None
-    if 'simulation_completed' not in st.session_state:
+    if "simulation_completed" not in st.session_state:
         st.session_state.simulation_completed = False
-    if 'current_parameters' not in st.session_state:
+    if "current_parameters" not in st.session_state:
         st.session_state.current_parameters = None
-    if 'show_model_images' not in st.session_state:
+    if "show_model_images" not in st.session_state:
         st.session_state.show_model_images = False
+    # NUEVOS PARA OPTIMIZACIÓN
+    if "last_bootstrap_hash" not in st.session_state:
+        st.session_state.last_bootstrap_hash = None
+    if "bootstrap_cache" not in st.session_state:
+        st.session_state.bootstrap_cache = {}
+
+
+def generar_hash_parametros(grupo, escenario, n_bootstrap, analisis_comparativo):
+    """Genera hash único para parámetros de bootstrap"""
+    import hashlib
+
+    param_string = f"{grupo}_{escenario}_{n_bootstrap}_{analisis_comparativo}"
+    return hashlib.md5(param_string.encode()).hexdigest()
+
+
+def execute_bootstrap_analysis(grupo, escenario, n_bootstrap, analisis_comparativo):
+    """Ejecuta el análisis Bootstrap - OPTIMIZADO SIN REGENERACIÓN INNECESARIA"""
+    st.markdown("---")
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+
+    with col_btn2:
+        current_params = {
+            "grupo": grupo,
+            "escenario": escenario,
+            "n_bootstrap": n_bootstrap,
+            "analisis_comparativo": analisis_comparativo,
+        }
+
+        # Generar hash de parámetros actuales
+        current_hash = generar_hash_parametros(
+            grupo, escenario, n_bootstrap, analisis_comparativo
+        )
+
+        escenario_info = ESCENARIOS_ECONOMICOS[escenario]
+        button_text = f"**EXECUTE BOOTSTRAP ANALYSIS**" + (
+            f" - {escenario_info['nombre']}"
+            if not analisis_comparativo
+            else " - MULTI-SCENARIO"
+        )
+
+        if st.button(
+            button_text,
+            type="primary",
+            use_container_width=True,
+            key="execute_bootstrap_optimized",
+        ):
+
+            # VERIFICAR SI YA EXISTE RESULTADO CON MISMOS PARÁMETROS
+            if (
+                st.session_state.last_bootstrap_hash == current_hash
+                and st.session_state.simulation_completed
+                and st.session_state.resultados_dict
+            ):
+
+                st.success(
+                    "✅ **Usando resultados Bootstrap existentes** (parámetros idénticos)"
+                )
+                st.info(
+                    "💡 Los parámetros no han cambiado. Reutilizando análisis previo para optimizar tiempo."
+                )
+                return True
+
+            # EJECUTAR NUEVO ANÁLISIS SOLO SI PARÁMETROS CAMBIARON
+            if analisis_comparativo:
+                st.markdown("### Executing Multi-scenario Bootstrap Analysis...")
+                progress_bar = st.progress(0)
+                resultados_dict = {}
+
+                for i, esc in enumerate(["baseline", "crisis", "bonanza"]):
+                    with st.spinner(
+                        f"Bootstrap resampling: {ESCENARIOS_ECONOMICOS[esc]['nombre']}..."
+                    ):
+                        resultados_dict[esc] = ejecutar_bootstrap_avanzado(
+                            grupo, esc, n_bootstrap
+                        )
+                    progress_bar.progress((i + 1) / 3)
+
+                st.session_state.resultados_dict = resultados_dict
+                st.session_state.simulation_completed = True
+                st.session_state.current_parameters = current_params
+                st.session_state.last_bootstrap_hash = current_hash  # GUARDAR HASH
+
+                st.success(
+                    f"**Multi-scenario Bootstrap Completed:** {n_bootstrap:,} × 3 iterations"
+                )
+
+            else:
+                with st.spinner(f"Bootstrap analysis: {escenario_info['nombre']}..."):
+                    resultado = ejecutar_bootstrap_avanzado(
+                        grupo, escenario, n_bootstrap
+                    )
+
+                st.session_state.resultados_dict = {escenario: resultado}
+                st.session_state.simulation_completed = True
+                st.session_state.current_parameters = current_params
+                st.session_state.last_bootstrap_hash = current_hash  # GUARDAR HASH
+
+                st.success(
+                    f"**Single Bootstrap Analysis Completed:** {n_bootstrap:,} iterations"
+                )
+
+            return True
+
+    return False
 
 
 def setup_sidebar():
-    """Configura el sidebar con controles"""
+    """Configura el sidebar con controles y toggle de imágenes"""
     with st.sidebar:
-        st.markdown("""
-        <div style='text-align: center; padding: 1rem; background: linear-gradient(45deg, #2c3e50 0%, #34495e 100%); 
-                    border-radius: 10px; color: white; margin-bottom: 1rem;'>
-            <h3 style='margin: 0;'>Bootstrap Control Panel</h3>
-            <p style='margin: 0.5rem 0 0 0; opacity: 0.9;'>Advanced Resampling Configuration</p>
-        </div>
-        """, unsafe_allow_html=True)
-
         # Selección de grupo
         grupo = st.selectbox(
-            "**Analysis Group**",
-            options=['Hah', 'Mah'],
-            format_func=lambda x: f"Male Savers ({x})" if x == 'Hah' else f"Female Savers ({x})",
-            key="selectbox_grupo"
+            "Select analysis group:",
+            options=list(MODELOS_COEFICIENTES.keys()),
+            format_func=lambda x: "Male Savers" if x == "Hah" else "Female Savers",
         )
 
-        # Mostrar métricas del modelo
+        # Métricas asociadas al grupo
         display_model_metrics(grupo)
 
-        # Botón para mostrar/ocultar imágenes del modelo
-        if st.button("Toggle PLS-SEM Model Images", type="secondary"):
+        # Toggle para mostrar modelos o logo
+        if st.button("🔄 Toggle PLS-SEM Models / UCAB Logo", type="secondary"):
             st.session_state.show_model_images = not st.session_state.show_model_images
+
+        estado_actual = (
+            "Modelos PLS-SEM" if st.session_state.show_model_images else "Logo UCAB"
+        )
+        st.info(f"**Mostrando:** {estado_actual}")
 
         st.markdown("---")
 
         # Selección de escenario
         escenario = setup_scenario_selection()
 
-        # Parámetros Bootstrap
+        # Parámetros de bootstrap
         n_bootstrap, analisis_comparativo = setup_bootstrap_parameters()
 
         return grupo, escenario, n_bootstrap, analisis_comparativo
@@ -127,14 +243,17 @@ def setup_sidebar():
 def display_model_metrics(grupo):
     """Muestra las métricas del modelo seleccionado"""
     model_stats = MODELOS_COEFICIENTES[grupo]
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class="metric-card">
         <h4>PLS-SEM Model Metrics - {grupo}</h4>
         <p><strong>R²:</strong> {model_stats['r2']:.4f}</p>
         <p><strong>RMSE:</strong> {model_stats['rmse']:.4f}</p>
         <p><strong>Correlation:</strong> {model_stats['correlation']:.4f}</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 def setup_scenario_selection():
@@ -142,20 +261,23 @@ def setup_scenario_selection():
     st.markdown("**Economic Scenario**")
     escenario = st.radio(
         "Select economic context:",
-        options=['baseline', 'crisis', 'bonanza'],
-        format_func=lambda x: ESCENARIOS_ECONOMICOS[x]['nombre'],
+        options=["baseline", "crisis", "bonanza"],
+        format_func=lambda x: ESCENARIOS_ECONOMICOS[x]["nombre"],
         index=0,
-        key="radio_escenario"
+        key="radio_escenario",
     )
 
     # Mostrar información del escenario
     escenario_info = ESCENARIOS_ECONOMICOS[escenario]
-    st.markdown(f"""
+    st.markdown(
+        f"""
     <div class="scenario-card" style="background: linear-gradient(45deg, {escenario_info['color']}22, {escenario_info['color']}44);">
         <h4 style="color: {escenario_info['color']};">{escenario_info['nombre']}</h4>
         <p style="margin: 0; font-size: 0.9rem; color: #333;">{escenario_info['descripcion']}</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     return escenario
 
@@ -167,19 +289,22 @@ def setup_bootstrap_parameters():
 
     n_bootstrap = st.number_input(
         "Number of Bootstrap iterations",
-        min_value=1000, max_value=5000, value=3000, step=500,
+        min_value=1000,
+        max_value=5000,
+        value=3000,
+        step=500,
         help="Bootstrap resampling iterations for statistical inference",
-        key="number_input_bootstrap"
+        key="number_input_bootstrap",
     )
 
     analisis_comparativo = st.checkbox(
-        "**Multi-scenario Bootstrap Analysis**", value=True,
-        key="checkbox_comparativo"
+        "**Multi-scenario Bootstrap Analysis**", value=True, key="checkbox_comparativo"
     )
 
     # Información metodológica
     with st.expander("ℹ️ Bootstrap Methodology Info"):
-        st.markdown("""
+        st.markdown(
+            """
         **Bootstrap Resampling Benefits:**
         - More robust statistical inference
         - Bias correction capabilities
@@ -191,18 +316,25 @@ def setup_bootstrap_parameters():
         - Uses actual data distribution
         - Accounts for sampling variability
         - Provides bias-corrected estimates
-        """)
+        """
+        )
 
     return n_bootstrap, analisis_comparativo
 
 
-def main_interface(scores_df, items_df, grupo, escenario, n_bootstrap, analisis_comparativo):
-    """Interfaz principal de la aplicación"""
+def main_interface(
+    scores_df, items_df, grupo, escenario, n_bootstrap, analisis_comparativo
+):
+    """Interfaz principal con logo UCAB"""
 
-    # Mostrar imágenes del modelo si está activado
+    # Mostrar logo UCAB o imágenes del modelo
     if st.session_state.show_model_images:
         st.markdown("---")
         display_model_images(grupo)
+        st.markdown("---")
+    else:
+        # MOSTRAR LOGO UCAB CON DEGRADADO
+        display_ucab_logo()
         st.markdown("---")
 
     # Mostrar información del modelo actual
@@ -214,10 +346,62 @@ def main_interface(scores_df, items_df, grupo, escenario, n_bootstrap, analisis_
         display_results()
 
 
+def display_ucab_logo():
+    """Muestra logo UCAB con efecto degradado"""
+    try:
+        if os.path.exists("Logo_UCAB_1.png"):
+            from PIL import Image
+
+            logo = Image.open("Logo_UCAB_1.png")
+
+            # Container con efecto degradado
+            st.markdown(
+                """
+            <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%); 
+                        padding: 3rem 2rem; border-radius: 20px; text-align: center; 
+                        box-shadow: 0 15px 35px rgba(30, 60, 114, 0.3), 0 5px 15px rgba(0,0,0,0.1);
+                        margin: 2rem 0; border: 2px solid rgba(255,255,255,0.1);">
+                <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; 
+                           backdrop-filter: blur(10px);">
+                    <h2 style="color: white; margin: 0 0 1rem 0; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+                        Universidad Católica Andrés Bello
+                    </h2>
+                    <h3 style="color: rgba(255,255,255,0.9); margin: 0; font-weight: 400; font-size: 1.2rem;">
+                        Doctorado en Economía • Simulador PCA v3.2
+                    </h3>
+                </div>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+            # Logo centrado
+            col1, col2, col3 = st.columns([1, 2, 1])
+            with col2:
+                st.image(logo, use_column_width=True)
+
+        else:
+            # Fallback si no hay logo
+            st.markdown(
+                """
+            <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+                        padding: 3rem; border-radius: 15px; text-align: center; color: white;">
+                <h2>Universidad Católica Andrés Bello</h2>
+                <h3>Doctorado en Economía</h3>
+                <p>Simulador PCA v3.2 - Análisis Conductual del Ahorro</p>
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
+
+    except Exception as e:
+        st.error(f"Error mostrando logo: {str(e)}")
+
+
 def display_model_images(grupo):
     """Muestra las imágenes del modelo estructural según el grupo"""
     try:
-        if grupo == 'Hah':
+        if grupo == "Hah":
             image_path = "hombres.JPG"
             title = "Structural Model - Male Savers (Hah)"
         else:
@@ -226,26 +410,31 @@ def display_model_images(grupo):
 
         if os.path.exists(image_path):
             from PIL import Image
+
             image = Image.open(image_path)
-            st.markdown(f"""
+            st.markdown(
+                f"""
             <div class="model-images">
                 <h4 style="color: #2c3e50; text-align: center; margin-bottom: 1rem;">{title}</h4>
             </div>
-            """, unsafe_allow_html=True)
+            """,
+                unsafe_allow_html=True,
+            )
             st.image(image, caption=title, use_column_width=True)
         else:
             st.info(
-                "Model images not available. Please ensure structural model images are in the working directory.")
+                "Model images not available. Please ensure structural model images are in the working directory."
+            )
     except Exception as e:
         st.error(f"Error loading model image: {str(e)}")
 
 
 def display_current_model_info(grupo, escenario, n_bootstrap):
-    """Muestra información del modelo actual con diseño doctoral elegante"""
+    """Información del modelo - HTML CORREGIDO"""
     st.markdown("---")
 
-    # Header section con gradiente
-    st.markdown("""
+    # Header corregido
+    context_html = """
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 padding: 2rem; border-radius: 15px; color: white; text-align: center; margin-bottom: 2rem;
                 box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);">
@@ -256,37 +445,38 @@ def display_current_model_info(grupo, escenario, n_bootstrap):
             Bootstrap Resampling con Ajustes Contextuales de Escenario
         </p>
     </div>
-    """, unsafe_allow_html=True)
+    """
 
     col1, col2, col3 = st.columns([2, 1, 1])
 
     with col1:
-        # Ecuación estructural con diseño elegante
-        st.markdown("""
+        # ECUACIÓN DENTRO DEL MISMO RECUADRO
+        context_html = f"""
         <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); 
                     padding: 2rem; border-radius: 12px; border-left: 5px solid #007bff;
                     box-shadow: 0 4px 15px rgba(0,123,255,0.1); margin-bottom: 1rem;">
             <h3 style="color: #495057; margin: 0 0 1rem 0; font-weight: 600;">
                 📊 Ecuación Estructural Activa
             </h3>
-        """, unsafe_allow_html=True)
-
-        # Mostrar ecuación con estilo código mejorado
-        st.code(MODELOS_COEFICIENTES[grupo]['ecuacion'], language='text')
-
-        st.markdown("""
+            <div style="background: #2d3748; color: #e2e8f0; padding: 1rem; border-radius: 6px; 
+                        font-family: 'Courier New', monospace; font-size: 14px; margin: 1rem 0;">
+                {MODELOS_COEFICIENTES[grupo]['ecuacion']}
+            </div>
             <div style="background: rgba(0,123,255,0.1); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
                 <strong style="color: #007bff;">💡 Metodología:</strong> Bootstrap Resampling con factores de ajuste contextual por escenario económico
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(context_html, unsafe_allow_html=True)
 
     with col2:
-        # Current Profile con diseño doctoral
-        grupo_stats = MODELOS_COEFICIENTES[grupo]['grupo_stats']
-        grupo_nombre = "Ahorradores Masculinos" if grupo == 'Hah' else "Ahorradoras Femeninas"
+        # Profile corregido
+        grupo_stats = MODELOS_COEFICIENTES[grupo]["grupo_stats"]
+        grupo_nombre = (
+            "Ahorradores Masculinos" if grupo == "Hah" else "Ahorradoras Femeninas"
+        )
 
-        st.markdown(f"""
+        context_html = f"""
         <div style="background: linear-gradient(135deg, #6f42c1 0%, #563d7c 100%); 
                     padding: 2rem; border-radius: 15px; color: white; text-align: center;
                     box-shadow: 0 8px 20px rgba(111, 66, 193, 0.3); margin-bottom: 1rem;">
@@ -310,13 +500,13 @@ def display_current_model_info(grupo, escenario, n_bootstrap):
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(context_html, unsafe_allow_html=True)
 
     with col3:
-        # Context y Cognitive Averages con diseño doctoral
         escenario_info = ESCENARIOS_ECONOMICOS[escenario]
 
-        st.markdown(f"""
+        context_html = f"""
         <div style="background: linear-gradient(135deg, {escenario_info['color']} 0%, {escenario_info['color']}CC 100%); 
                     padding: 2rem; border-radius: 15px; color: white; text-align: center;
                     box-shadow: 0 8px 20px rgba(52, 73, 94, 0.3); margin-bottom: 1rem;">
@@ -331,7 +521,7 @@ def display_current_model_info(grupo, escenario, n_bootstrap):
                     Bootstrap: {n_bootstrap:,} iteraciones
                 </div>
             </div>
-            
+            </h4>
             <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 8px;">
                 <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem;">🧠 Promedios Cognitivos</h4>
                 <div style="display: grid; gap: 0.6rem; font-size: 0.9rem;">
@@ -347,22 +537,23 @@ def display_current_model_info(grupo, escenario, n_bootstrap):
                 </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-
-        # Métricas del modelo con estilo doctoral
+        """
+        st.markdown(context_html, unsafe_allow_html=True)
+        # Métricas del modelo
         model_stats = MODELOS_COEFICIENTES[grupo]
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
-                    padding: 1.5rem; border-radius: 12px; color: white; text-align: center;
-                    box-shadow: 0 6px 18px rgba(40, 167, 69, 0.3);">
-            <h4 style="margin: 0 0 1rem 0; font-weight: 600;">📈 Métricas del Modelo</h4>
-            <div style="display: grid; gap: 0.5rem; font-size: 0.85rem;">
-                <div><strong>R²:</strong> {model_stats['r2']:.4f}</div>
-                <div><strong>RMSE:</strong> {model_stats['rmse']:.4f}</div>
-                <div><strong>Correlación:</strong> {model_stats['correlation']:.4f}</div>
+        context_html = f"""
+            <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                        padding: 1.5rem; border-radius: 12px; color: white; text-align: center;
+                        box-shadow: 0 6px 18px rgba(40, 167, 69, 0.3);">
+                <h4 style="margin: 0 0 1rem 0; font-weight: 600;">📈 Métricas del Modelo</h4>
+                <div style="display: grid; gap: 0.5rem; font-size: 0.85rem;">
+                    <div><strong>R²:</strong> {model_stats['r2']:.4f}</div>
+                    <div><strong>RMSE:</strong> {model_stats['rmse']:.4f}</div>
+                    <div><strong>Correlación:</strong> {model_stats['correlation']:.4f}</div>
+                </div>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """
+        st.markdown(context_html, unsafe_allow_html=True)
 
 
 def execute_bootstrap_analysis(grupo, escenario, n_bootstrap, analisis_comparativo):
@@ -372,26 +563,37 @@ def execute_bootstrap_analysis(grupo, escenario, n_bootstrap, analisis_comparati
 
     with col_btn2:
         current_params = {
-            'grupo': grupo, 'escenario': escenario, 'n_bootstrap': n_bootstrap,
-            'analisis_comparativo': analisis_comparativo
+            "grupo": grupo,
+            "escenario": escenario,
+            "n_bootstrap": n_bootstrap,
+            "analisis_comparativo": analisis_comparativo,
         }
 
         escenario_info = ESCENARIOS_ECONOMICOS[escenario]
-        button_text = f"**EXECUTE BOOTSTRAP ANALYSIS**" + \
-            (f" - {escenario_info['nombre']}" if not analisis_comparativo else " - MULTI-SCENARIO")
+        button_text = f"**EXECUTE BOOTSTRAP ANALYSIS**" + (
+            f" - {escenario_info['nombre']}"
+            if not analisis_comparativo
+            else " - MULTI-SCENARIO"
+        )
 
-        if st.button(button_text, type="primary", use_container_width=True, key="execute_bootstrap"):
-
+        if st.button(
+            button_text,
+            type="primary",
+            use_container_width=True,
+            key="execute_bootstrap",
+        ):
             if analisis_comparativo:
-                st.markdown(
-                    "### Executing Multi-scenario Bootstrap Analysis...")
+                st.markdown("### Executing Multi-scenario Bootstrap Analysis...")
                 progress_bar = st.progress(0)
                 resultados_dict = {}
 
-                for i, esc in enumerate(['baseline', 'crisis', 'bonanza']):
-                    with st.spinner(f"Bootstrap resampling: {ESCENARIOS_ECONOMICOS[esc]['nombre']}..."):
+                for i, esc in enumerate(["baseline", "crisis", "bonanza"]):
+                    with st.spinner(
+                        f"Bootstrap resampling: {ESCENARIOS_ECONOMICOS[esc]['nombre']}..."
+                    ):
                         resultados_dict[esc] = ejecutar_bootstrap_avanzado(
-                            grupo, esc, n_bootstrap)
+                            grupo, esc, n_bootstrap
+                        )
                     progress_bar.progress((i + 1) / 3)
 
                 st.session_state.resultados_dict = resultados_dict
@@ -399,28 +601,32 @@ def execute_bootstrap_analysis(grupo, escenario, n_bootstrap, analisis_comparati
                 st.session_state.current_parameters = current_params
 
                 st.success(
-                    f"**Multi-scenario Bootstrap Completed:** {n_bootstrap:,} × 3 iterations")
+                    f"**Multi-scenario Bootstrap Completed:** {n_bootstrap:,} × 3 iterations"
+                )
 
             else:
                 with st.spinner(f"Bootstrap analysis: {escenario_info['nombre']}..."):
                     resultado = ejecutar_bootstrap_avanzado(
-                        grupo, escenario, n_bootstrap)
+                        grupo, escenario, n_bootstrap
+                    )
 
                 st.session_state.resultados_dict = {escenario: resultado}
                 st.session_state.simulation_completed = True
                 st.session_state.current_parameters = current_params
 
                 st.success(
-                    f"**Single Bootstrap Analysis Completed:** {n_bootstrap:,} iterations")
-
-            return True
-
+                    f"**Single Bootstrap Analysis Completed:** {n_bootstrap:,} iterations"
+                )
+        return True
     return False
 
 
 def display_results():
     """Muestra los resultados del análisis Bootstrap"""
-    if not st.session_state.simulation_completed or not st.session_state.resultados_dict:
+    if (
+        not st.session_state.simulation_completed
+        or not st.session_state.resultados_dict
+    ):
         return
 
     # Sección de descarga
@@ -436,21 +642,29 @@ def display_results():
 def display_download_section():
     """Muestra la sección de descarga de resultados"""
     st.markdown("---")
-    st.markdown("""
+    st.markdown(
+        """
     <div class="download-section">
         <h3 style='margin: 0 0 1rem 0;'>Bootstrap Results Download</h3>
         <p style='margin: 0; opacity: 0.9;'>Download comprehensive Excel with Bootstrap statistics, confidence intervals, and bias corrections</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
     col_download1, col_download2, col_download3 = st.columns([1, 2, 1])
 
     with col_download2:
-        if st.button("Generate & Download Bootstrap Excel Report", type="secondary", use_container_width=True, key="download_excel"):
+        if st.button(
+            "Generate & Download Bootstrap Excel Report",
+            type="secondary",
+            use_container_width=True,
+            key="download_excel",
+        ):
             with st.spinner("Generating Bootstrap Excel report..."):
                 excel_buffer, filename = crear_excel_bootstrap_completo(
                     st.session_state.resultados_dict,
-                    st.session_state.current_parameters
+                    st.session_state.current_parameters,
                 )
 
                 st.download_button(
@@ -459,11 +673,12 @@ def display_download_section():
                     file_name=filename,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True,
-                    key="download_button"
+                    key="download_button",
                 )
 
                 st.success(
-                    "Bootstrap Excel report generated! Contains all resampling data and statistical inference.")
+                    "Bootstrap Excel report generated! Contains all resampling data and statistical inference."
+                )
 
 
 def display_multi_scenario_analysis():
@@ -474,21 +689,24 @@ def display_multi_scenario_analysis():
         st.error("No bootstrap results available.")
         return
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-        "Bootstrap Dashboard",
-        "Confidence Intervals",
-        "Bias Correction",
-        "Economic Impact",
-        "Bootstrap Diagnostics",
-        "📊 Análisis 3D",
-        "📍 Análisis Cuadrantes"
-    ])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+        [
+            "Bootstrap Dashboard",
+            "Confidence Intervals",
+            "Bias Correction",
+            "Economic Impact",
+            "Bootstrap Diagnostics",
+            "📊 Análisis 3D",
+            "📍 Análisis Cuadrantes",
+        ]
+    )
 
     with tab1:
         st.markdown("### Bootstrap Comparative Analysis Dashboard")
         try:
             fig_dashboard = crear_dashboard_bootstrap_comparativo(
-                st.session_state.resultados_dict)
+                st.session_state.resultados_dict
+            )
             st.plotly_chart(fig_dashboard, use_container_width=True)
 
             # Métricas Bootstrap comparativas
@@ -523,13 +741,14 @@ def display_multi_scenario_analysis():
             st.error(f"Error in diagnostics: {str(e)}")
 
     # En las funciones display_multi_scenario_analysis() y display_single_scenario_analysis()
-# Modificar las pestañas problemáticas:
+    # Modificar las pestañas problemáticas:
 
     with tab6:  # Análisis 3D
         try:
             with st.container():
                 st.markdown(
-                    "**Nota:** Visualizaciones optimizadas para mejor rendimiento")
+                    "**Nota:** Visualizaciones optimizadas para mejor rendimiento"
+                )
                 configurar_interfaz_3d(st.session_state.resultados_dict)
         except Exception as e:
             st.error(f"Error en análisis 3D: {str(e)}")
@@ -539,10 +758,11 @@ def display_multi_scenario_analysis():
         try:
             with st.container():
                 st.markdown(
-                    "**Nota:** Usando muestra optimizada para análisis de cuadrantes")
+                    "**Nota:** Usando muestra optimizada para análisis de cuadrantes"
+                )
                 from visualization.cuadrantes import crear_analisis_cuadrantes_completo
-                crear_analisis_cuadrantes_completo(
-                    st.session_state.resultados_dict)
+
+                crear_analisis_cuadrantes_completo(st.session_state.resultados_dict)
         except Exception as e:
             st.error(f"Error en análisis de cuadrantes: {str(e)}")
             st.info("Intenta seleccionar un escenario diferente.")
@@ -554,12 +774,18 @@ def display_bootstrap_comparative_metrics():
     st.markdown("### Bootstrap Statistics Summary")
     col1, col2, col3 = st.columns(3)
 
-    for i, (esc, col) in enumerate(zip(['baseline', 'crisis', 'bonanza'], [col1, col2, col3])):
+    for i, (esc, col) in enumerate(
+        zip(["baseline", "crisis", "bonanza"], [col1, col2, col3])
+    ):
         with col:
-            if esc in st.session_state.resultados_dict and 'bootstrap_stats' in st.session_state.resultados_dict[esc]:
-                stats = st.session_state.resultados_dict[esc]['bootstrap_stats']
+            if (
+                esc in st.session_state.resultados_dict
+                and "bootstrap_stats" in st.session_state.resultados_dict[esc]
+            ):
+                stats = st.session_state.resultados_dict[esc]["bootstrap_stats"]
 
-                st.markdown(f"""
+                st.markdown(
+                    f"""
                 <div style="background: {ESCENARIOS_ECONOMICOS[esc]['color']}20; 
                             padding: 1rem; border-radius: 8px; text-align: center;">
                     <h4 style="color: {ESCENARIOS_ECONOMICOS[esc]['color']};">
@@ -570,47 +796,54 @@ def display_bootstrap_comparative_metrics():
                     <p><strong>95% CI:</strong> [{stats.get('pca_ci_lower', 0):.3f}, {stats.get('pca_ci_upper', 0):.3f}]</p>
                     <p><strong>Iterations:</strong> {stats.get('bootstrap_n', 0):,}</p>
                 </div>
-                """, unsafe_allow_html=True)
+                """,
+                    unsafe_allow_html=True,
+                )
 
 
 def display_confidence_intervals_analysis():
     """Muestra análisis de intervalos de confianza"""
     st.markdown("### Bootstrap Confidence Intervals Analysis")
 
-    import plotly.graph_objects as go
+    # import plotly.graph_objects as go
 
     # Gráfico de intervalos de confianza
     fig_ci = go.Figure()
 
-    scenarios = ['baseline', 'crisis', 'bonanza']
-    colors = ['blue', 'red', 'green']
+    scenarios = ["baseline", "crisis", "bonanza"]
+    colors = ["blue", "red", "green"]
 
     for i, esc in enumerate(scenarios):
-        if esc in st.session_state.resultados_dict and 'bootstrap_stats' in st.session_state.resultados_dict[esc]:
-            stats = st.session_state.resultados_dict[esc]['bootstrap_stats']
-            mean_val = stats.get('pca_mean', 0)
-            ci_lower = stats.get('pca_ci_lower', 0)
-            ci_upper = stats.get('pca_ci_upper', 0)
+        if (
+            esc in st.session_state.resultados_dict
+            and "bootstrap_stats" in st.session_state.resultados_dict[esc]
+        ):
+            stats = st.session_state.resultados_dict[esc]["bootstrap_stats"]
+            mean_val = stats.get("pca_mean", 0)
+            ci_lower = stats.get("pca_ci_lower", 0)
+            ci_upper = stats.get("pca_ci_upper", 0)
 
-            fig_ci.add_trace(go.Scatter(
-                x=[ESCENARIOS_ECONOMICOS[esc]['nombre']],
-                y=[mean_val],
-                error_y=dict(
-                    type='data',
-                    symmetric=False,
-                    arrayminus=[mean_val - ci_lower],
-                    array=[ci_upper - mean_val]
-                ),
-                mode='markers',
-                marker=dict(size=15, color=colors[i]),
-                name=f'{esc.title()} CI',
-                showlegend=True
-            ))
+            fig_ci.add_trace(
+                go.Scatter(
+                    x=[ESCENARIOS_ECONOMICOS[esc]["nombre"]],
+                    y=[mean_val],
+                    error_y=dict(
+                        type="data",
+                        symmetric=False,
+                        arrayminus=[mean_val - ci_lower],
+                        array=[ci_upper - mean_val],
+                    ),
+                    mode="markers",
+                    marker=dict(size=15, color=colors[i]),
+                    name=f"{esc.title()} CI",
+                    showlegend=True,
+                )
+            )
 
     fig_ci.update_layout(
-        title='95% Bootstrap Confidence Intervals by Scenario',
-        yaxis_title='PCA Value',
-        height=500
+        title="95% Bootstrap Confidence Intervals by Scenario",
+        yaxis_title="PCA Value",
+        height=500,
     )
 
     st.plotly_chart(fig_ci, use_container_width=True)
@@ -619,15 +852,21 @@ def display_confidence_intervals_analysis():
     st.markdown("#### Detailed Confidence Intervals")
     ci_data = []
     for esc in scenarios:
-        if esc in st.session_state.resultados_dict and 'bootstrap_stats' in st.session_state.resultados_dict[esc]:
-            stats = st.session_state.resultados_dict[esc]['bootstrap_stats']
-            ci_data.append({
-                'Scenario': ESCENARIOS_ECONOMICOS[esc]['nombre'],
-                'Bootstrap_Mean': stats.get('pca_mean', 0),
-                'CI_Lower_2.5%': stats.get('pca_ci_lower', 0),
-                'CI_Upper_97.5%': stats.get('pca_ci_upper', 0),
-                'CI_Width': stats.get('pca_ci_upper', 0) - stats.get('pca_ci_lower', 0)
-            })
+        if (
+            esc in st.session_state.resultados_dict
+            and "bootstrap_stats" in st.session_state.resultados_dict[esc]
+        ):
+            stats = st.session_state.resultados_dict[esc]["bootstrap_stats"]
+            ci_data.append(
+                {
+                    "Scenario": ESCENARIOS_ECONOMICOS[esc]["nombre"],
+                    "Bootstrap_Mean": stats.get("pca_mean", 0),
+                    "CI_Lower_2.5%": stats.get("pca_ci_lower", 0),
+                    "CI_Upper_97.5%": stats.get("pca_ci_upper", 0),
+                    "CI_Width": stats.get("pca_ci_upper", 0)
+                    - stats.get("pca_ci_lower", 0),
+                }
+            )
 
     if ci_data:
         ci_df = pd.DataFrame(ci_data)
@@ -643,21 +882,28 @@ def display_bias_correction_analysis():
     with col1:
         st.markdown("#### Bias Correction Comparison")
         bias_data = []
-        scenarios = ['baseline', 'crisis', 'bonanza']
+        scenarios = ["baseline", "crisis", "bonanza"]
         for esc in scenarios:
-            if esc in st.session_state.resultados_dict and 'bootstrap_stats' in st.session_state.resultados_dict[esc]:
-                stats = st.session_state.resultados_dict[esc]['bootstrap_stats']
-                bootstrap_mean = stats.get('pca_mean', 0)
-                bias_corrected = stats.get('bias_corrected_mean', 0)
+            if (
+                esc in st.session_state.resultados_dict
+                and "bootstrap_stats" in st.session_state.resultados_dict[esc]
+            ):
+                stats = st.session_state.resultados_dict[esc]["bootstrap_stats"]
+                bootstrap_mean = stats.get("pca_mean", 0)
+                bias_corrected = stats.get("bias_corrected_mean", 0)
                 bias = bootstrap_mean - bias_corrected
 
-                bias_data.append({
-                    'Scenario': ESCENARIOS_ECONOMICOS[esc]['nombre'],
-                    'Bootstrap_Mean': bootstrap_mean,
-                    'Bias_Corrected_Mean': bias_corrected,
-                    'Estimated_Bias': bias,
-                    'Bias_Percentage': (bias / bootstrap_mean) * 100 if bootstrap_mean != 0 else 0
-                })
+                bias_data.append(
+                    {
+                        "Scenario": ESCENARIOS_ECONOMICOS[esc]["nombre"],
+                        "Bootstrap_Mean": bootstrap_mean,
+                        "Bias_Corrected_Mean": bias_corrected,
+                        "Estimated_Bias": bias,
+                        "Bias_Percentage": (
+                            (bias / bootstrap_mean) * 100 if bootstrap_mean != 0 else 0
+                        ),
+                    }
+                )
 
         if bias_data:
             bias_df = pd.DataFrame(bias_data)
@@ -670,85 +916,373 @@ def display_bias_correction_analysis():
 
             fig_bias = go.Figure()
 
-            scenarios_names = [d['Scenario'] for d in bias_data]
-            bootstrap_means = [d['Bootstrap_Mean'] for d in bias_data]
-            bias_corrected_means = [d['Bias_Corrected_Mean']
-                                    for d in bias_data]
+            scenarios_names = [d["Scenario"] for d in bias_data]
+            bootstrap_means = [d["Bootstrap_Mean"] for d in bias_data]
+            bias_corrected_means = [d["Bias_Corrected_Mean"] for d in bias_data]
 
-            fig_bias.add_trace(go.Bar(
-                x=scenarios_names,
-                y=bootstrap_means,
-                name='Bootstrap Mean',
-                marker_color='lightblue',
-                opacity=0.7
-            ))
+            fig_bias.add_trace(
+                go.Bar(
+                    x=scenarios_names,
+                    y=bootstrap_means,
+                    name="Bootstrap Mean",
+                    marker_color="lightblue",
+                    opacity=0.7,
+                )
+            )
 
-            fig_bias.add_trace(go.Bar(
-                x=scenarios_names,
-                y=bias_corrected_means,
-                name='Bias-Corrected Mean',
-                marker_color='darkblue',
-                opacity=0.7
-            ))
+            fig_bias.add_trace(
+                go.Bar(
+                    x=scenarios_names,
+                    y=bias_corrected_means,
+                    name="Bias-Corrected Mean",
+                    marker_color="darkblue",
+                    opacity=0.7,
+                )
+            )
 
             fig_bias.update_layout(
-                title='Bootstrap vs Bias-Corrected Estimates',
-                yaxis_title='PCA Value',
-                barmode='group',
-                height=400
+                title="Bootstrap vs Bias-Corrected Estimates",
+                yaxis_title="PCA Value",
+                barmode="group",
+                height=400,
             )
 
             st.plotly_chart(fig_bias, use_container_width=True)
 
 
 def display_economic_impact_analysis():
-    """Muestra análisis de impacto económico - CORREGIDO DEFINITIVAMENTE"""
+    """Análisis de impacto económico - SOLUCIÓN DEFINITIVA SIN SALIDAS"""
     st.markdown("### Economic Models Bootstrap Impact Analysis")
 
-    # Verificar que hay resultados bootstrap disponibles
     if not st.session_state.resultados_dict:
-        st.warning(
-            "⚠️ No hay datos de bootstrap disponibles. Ejecuta primero el análisis.")
+        st.warning("No hay datos de bootstrap disponibles")
         return
 
-    # Usar session_state para mantener el modelo seleccionado
-    if 'selected_economic_model' not in st.session_state:
-        st.session_state.selected_economic_model = 'keynes'  # Default
+    # USAR CONTAINER FIJO SIN SELECTBOX QUE CAUSE PROBLEMAS
+    with st.container():
+        st.markdown("#### 📊 Análisis por Modelo Económico")
 
-    # Selector de modelo sin rerun automático
-    col_selector, col_info = st.columns([1, 2])
+        # CREAR TABS EN LUGAR DE SELECTBOX
+        modelos = list(MODELOS_EXTERNOS.keys())
+        tabs = st.tabs([MODELOS_EXTERNOS[m]["nombre"] for m in modelos])
 
-    with col_selector:
-        nuevo_modelo = st.selectbox(
-            "Select economic model:",
-            options=list(MODELOS_EXTERNOS.keys()),
-            format_func=lambda x: MODELOS_EXTERNOS[x]['nombre'],
-            index=list(MODELOS_EXTERNOS.keys()).index(
-                st.session_state.selected_economic_model),
-            key="selectbox_modelo_economico_persistente"
-        )
+        for i, (modelo_key, tab) in enumerate(zip(modelos, tabs)):
+            with tab:
+                mostrar_analisis_modelo_individual(
+                    modelo_key, MODELOS_EXTERNOS[modelo_key]
+                )
 
-        # Solo actualizar si cambió el modelo
-        if nuevo_modelo != st.session_state.selected_economic_model:
-            st.session_state.selected_economic_model = nuevo_modelo
-            st.rerun()  # Rerun controlado
 
-    # Usar el modelo del session_state
-    modelo_analizar = st.session_state.selected_economic_model
-    modelo_info = MODELOS_EXTERNOS[modelo_analizar]
+def mostrar_analisis_modelo_individual(modelo_key, modelo_info):
+    """Muestra análisis individual de un modelo sin causar redirects"""
 
-    with col_info:
-        # Información del modelo seleccionado
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 1rem; border-radius: 8px; border-left: 4px solid #007bff;">
-            <h4 style="color: #495057; margin: 0;">{modelo_info['nombre']}</h4>
-            <p style="margin: 0.5rem 0;"><strong>Original:</strong> <code>{modelo_info['original']}</code></p>
-            <p style="margin: 0;"><strong>With PCA:</strong> <code>{modelo_info['con_pca']}</code></p>
+    # Información del modelo
+    st.markdown(
+        f"""
+    <div style="background: linear-gradient(135deg, #f8f9fa, #e9ecef); padding: 1.5rem; border-radius: 10px; margin: 1rem 0; border-left: 4px solid #007bff;">
+        <h4 style="color: #495057; margin: 0 0 1rem 0;">{modelo_info['nombre']}</h4>
+        <div style="background: white; padding: 1rem; border-radius: 6px;">
+            <p style="margin: 0.5rem 0;"><strong>Fórmula Original:</strong> <code>{modelo_info['original']}</code></p>
+            <p style="margin: 0.5rem 0 0 0;"><strong>Con Ajuste PCA:</strong> <code>{modelo_info['con_pca']}</code></p>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+    """,
+        unsafe_allow_html=True,
+    )
 
-    # Mostrar análisis detallado del modelo
-    mostrar_analisis_modelo_detallado(modelo_analizar, modelo_info)
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        # Gráfico del modelo específico
+        crear_grafico_modelo_fijo(modelo_key, modelo_info)
+
+    with col2:
+        # Estadísticas del modelo
+        crear_estadisticas_modelo_fijo(modelo_key)
+
+
+def crear_grafico_modelo_fijo(modelo_key, modelo_info):
+    """Crea gráfico fijo para un modelo específico"""
+
+    fig = go.Figure()
+    colores = {"baseline": "#34495e", "crisis": "#e74c3c", "bonanza": "#27ae60"}
+
+    for esc in ["baseline", "crisis", "bonanza"]:
+        if esc in st.session_state.resultados_dict:
+            resultados = st.session_state.resultados_dict[esc]
+            if modelo_key in resultados["modelos_externos"]:
+                datos = resultados["modelos_externos"][modelo_key]["con_pca"]
+
+                fig.add_trace(
+                    go.Box(
+                        y=datos,
+                        name=ESCENARIOS_ECONOMICOS[esc]["nombre"],
+                        marker_color=colores[esc],
+                        opacity=0.7,
+                        boxmean="sd",
+                    )
+                )
+
+    fig.update_layout(
+        title=f'Distribución Bootstrap - {modelo_info["nombre"]}',
+        yaxis_title="Ahorro Proyectado",
+        height=400,
+        showlegend=True,
+    )
+
+    st.plotly_chart(fig, use_container_width=True, key=f"modelo_{modelo_key}")
+
+
+def crear_estadisticas_modelo_fijo(modelo_key):
+    """Crea estadísticas fijas para un modelo"""
+
+    st.markdown("**Estadísticas de Impacto:**")
+
+    estadisticas = []
+    for esc in ["baseline", "crisis", "bonanza"]:
+        if esc in st.session_state.resultados_dict:
+            resultados = st.session_state.resultados_dict[esc]
+            if modelo_key in resultados["modelos_externos"]:
+                original = np.mean(
+                    resultados["modelos_externos"][modelo_key]["original"]
+                )
+                pca = np.mean(resultados["modelos_externos"][modelo_key]["con_pca"])
+                impacto = ((pca - original) / original) * 100
+
+                # Calcular intervalo de confianza del impacto
+                original_data = resultados["modelos_externos"][modelo_key]["original"]
+                pca_data = resultados["modelos_externos"][modelo_key]["con_pca"]
+
+                impact_values = [
+                    (p - o) / o * 100 for p, o in zip(pca_data, original_data) if o != 0
+                ]
+                if impact_values:
+                    ci_lower = np.percentile(impact_values, 2.5)
+                    ci_upper = np.percentile(impact_values, 97.5)
+                else:
+                    ci_lower = ci_upper = 0
+
+                estadisticas.append(
+                    {
+                        "Escenario": ESCENARIOS_ECONOMICOS[esc]["nombre"],
+                        "Impacto_Medio_%": round(impacto, 2),
+                        "CI_Inferior_%": round(ci_lower, 2),
+                        "CI_Superior_%": round(ci_upper, 2),
+                        "Direccion": "Positivo" if impacto > 0 else "Negativo",
+                        "Magnitud": (
+                            "Alto"
+                            if abs(impacto) > 15
+                            else "Moderado" if abs(impacto) > 5 else "Bajo"
+                        ),
+                    }
+                )
+
+    if estadisticas:
+        df = pd.DataFrame(estadisticas)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+        # Interpretación adicional
+        impacto_promedio = np.mean([stat["Impacto_Medio_%"] for stat in estadisticas])
+        if abs(impacto_promedio) > 10:
+            st.success(f"**Impacto Significativo:** {impacto_promedio:+.1f}% promedio")
+        elif abs(impacto_promedio) > 5:
+            st.info(f"**Impacto Moderado:** {impacto_promedio:+.1f}% promedio")
+        else:
+            st.warning(f"**Impacto Bajo:** {impacto_promedio:+.1f}% promedio")
+
+    else:
+        st.info("No hay datos disponibles para este modelo.")
+
+
+# FUNCIÓN ADICIONAL: Matriz comparativa de todos los modelos
+def crear_matriz_comparativa_modelos():
+    """Crea matriz comparativa de impacto de todos los modelos"""
+
+    st.markdown("---")
+    st.markdown("#### 📊 Matriz Comparativa de Impacto Económico")
+
+    matriz_impactos = []
+
+    for modelo_key, modelo_info in MODELOS_EXTERNOS.items():
+        fila_modelo = {"Modelo": modelo_info["nombre"]}
+
+        for esc in ["baseline", "crisis", "bonanza"]:
+            if esc in st.session_state.resultados_dict:
+                resultados = st.session_state.resultados_dict[esc]
+                if modelo_key in resultados["modelos_externos"]:
+                    original = np.mean(
+                        resultados["modelos_externos"][modelo_key]["original"]
+                    )
+                    pca = np.mean(resultados["modelos_externos"][modelo_key]["con_pca"])
+                    impacto = ((pca - original) / original) * 100
+                    fila_modelo[f"{esc.title()}_%"] = round(impacto, 2)
+                else:
+                    fila_modelo[f"{esc.title()}_%"] = 0.0
+
+        # Calcular impacto promedio
+        impactos = [
+            fila_modelo.get(f"{esc.title()}_%", 0)
+            for esc in ["baseline", "crisis", "bonanza"]
+        ]
+        fila_modelo["Promedio_%"] = round(np.mean(impactos), 2)
+        fila_modelo["Volatilidad"] = round(np.std(impactos), 2)
+
+        matriz_impactos.append(fila_modelo)
+
+    if matriz_impactos:
+        df_matriz = pd.DataFrame(matriz_impactos)
+
+        # Aplicar formato condicional
+        def colorear_impacto(val):
+            if isinstance(val, (int, float)):
+                if val > 10:
+                    return "background-color: #d4edda; color: #155724"  # Verde
+                elif val < -10:
+                    return "background-color: #f8d7da; color: #721c24"  # Rojo
+                elif abs(val) > 5:
+                    return "background-color: #fff3cd; color: #856404"  # Amarillo
+            return ""
+
+        # Aplicar estilo solo a columnas de porcentaje
+        cols_porcentaje = [col for col in df_matriz.columns if "%" in col]
+        styled_df = df_matriz.style.applymap(colorear_impacto, subset=cols_porcentaje)
+
+        st.dataframe(styled_df, use_container_width=True)
+
+        # Análisis de la matriz
+        st.markdown("**💡 Análisis de la Matriz:**")
+
+        # Encontrar modelo con mayor impacto promedio
+        max_impacto_idx = df_matriz["Promedio_%"].abs().idxmax()
+        modelo_max_impacto = df_matriz.loc[max_impacto_idx]
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Modelo Más Sensible",
+                modelo_max_impacto["Modelo"],
+                f"{modelo_max_impacto['Promedio_%']:+.1f}%",
+            )
+
+        with col2:
+            crisis_impactos = [row["Crisis_%"] for row in matriz_impactos]
+            crisis_promedio = np.mean(crisis_impactos)
+            st.metric(
+                "Impacto Crisis Promedio",
+                f"{crisis_promedio:+.1f}%",
+                "Todos los modelos",
+            )
+
+        with col3:
+            volatilidades = [row["Volatilidad"] for row in matriz_impactos]
+            vol_promedio = np.mean(volatilidades)
+            st.metric(
+                "Volatilidad Promedio", f"{vol_promedio:.1f}%", "Entre escenarios"
+            )
+
+
+# COMPLETAR LA FUNCIÓN PRINCIPAL display_economic_impact_analysis()
+def display_economic_impact_analysis():
+    """Análisis de impacto económico - VERSIÓN COMPLETA"""
+    st.markdown("### Economic Models Bootstrap Impact Analysis")
+
+    if not st.session_state.resultados_dict:
+        st.warning("No hay datos de bootstrap disponibles")
+        return
+
+    # USAR CONTAINER FIJO SIN SELECTBOX QUE CAUSE PROBLEMAS
+    with st.container():
+        st.markdown("#### 📊 Análisis por Modelo Económico")
+
+        # CREAR TABS EN LUGAR DE SELECTBOX
+        modelos = list(MODELOS_EXTERNOS.keys())
+        tabs = st.tabs([MODELOS_EXTERNOS[m]["nombre"] for m in modelos])
+
+        for i, (modelo_key, tab) in enumerate(zip(modelos, tabs)):
+            with tab:
+                mostrar_analisis_modelo_individual(
+                    modelo_key, MODELOS_EXTERNOS[modelo_key]
+                )
+
+        # AÑADIR MATRIZ COMPARATIVA AL FINAL
+        crear_matriz_comparativa_modelos()
+
+
+# FUNCIÓN ADICIONAL: Resumen ejecutivo de modelos
+def crear_resumen_ejecutivo_modelos():
+    """Crea resumen ejecutivo del impacto de sesgos en modelos económicos"""
+
+    st.markdown("#### 📋 Resumen Ejecutivo: Impacto de Sesgos Cognitivos")
+
+    # Calcular estadísticas agregadas
+    todos_impactos = []
+    impactos_por_escenario = {"baseline": [], "crisis": [], "bonanza": []}
+
+    for modelo_key in MODELOS_EXTERNOS.keys():
+        for esc in ["baseline", "crisis", "bonanza"]:
+            if esc in st.session_state.resultados_dict:
+                resultados = st.session_state.resultados_dict[esc]
+                if modelo_key in resultados["modelos_externos"]:
+                    original = np.mean(
+                        resultados["modelos_externos"][modelo_key]["original"]
+                    )
+                    pca = np.mean(resultados["modelos_externos"][modelo_key]["con_pca"])
+                    impacto = ((pca - original) / original) * 100
+                    todos_impactos.append(impacto)
+                    impactos_por_escenario[esc].append(impacto)
+
+    if todos_impactos:
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            impacto_general = np.mean(todos_impactos)
+            st.metric(
+                "Impacto General", f"{impacto_general:+.1f}%", "Todos los modelos"
+            )
+
+        with col2:
+            if impactos_por_escenario["crisis"]:
+                impacto_crisis = np.mean(impactos_por_escenario["crisis"])
+                st.metric(
+                    "Impacto en Crisis",
+                    f"{impacto_crisis:+.1f}%",
+                    delta=f"vs General: {impacto_crisis - impacto_general:+.1f}%",
+                )
+
+        with col3:
+            if impactos_por_escenario["bonanza"]:
+                impacto_bonanza = np.mean(impactos_por_escenario["bonanza"])
+                st.metric(
+                    "Impacto en Bonanza",
+                    f"{impacto_bonanza:+.1f}%",
+                    delta=f"vs General: {impacto_bonanza - impacto_general:+.1f}%",
+                )
+
+        with col4:
+            volatilidad_general = np.std(todos_impactos)
+            st.metric("Volatilidad", f"{volatilidad_general:.1f}%", "Desv. estándar")
+
+        # Conclusiones
+        st.markdown("**🔍 Conclusiones Clave:**")
+
+        if abs(impacto_general) > 15:
+            conclusion_general = "Los sesgos cognitivos tienen un **impacto muy significativo** en las predicciones de los modelos económicos clásicos."
+        elif abs(impacto_general) > 8:
+            conclusion_general = "Los sesgos cognitivos muestran un **impacto considerable** en las predicciones económicas."
+        else:
+            conclusion_general = "Los sesgos cognitivos tienen un **impacto moderado** en los modelos económicos."
+
+        st.info(conclusion_general)
+
+        if impactos_por_escenario["crisis"] and impactos_por_escenario["bonanza"]:
+            crisis_vs_bonanza = np.mean(impactos_por_escenario["crisis"]) - np.mean(
+                impactos_por_escenario["bonanza"]
+            )
+            if abs(crisis_vs_bonanza) > 5:
+                st.warning(
+                    f"**Diferencial Crisis-Bonanza:** {crisis_vs_bonanza:+.1f}% - Los escenarios económicos **amplifican diferencialmente** el impacto de los sesgos."
+                )
 
 
 def mostrar_analisis_modelo_detallado(modelo_key, modelo_info):
@@ -762,28 +1296,33 @@ def mostrar_analisis_modelo_detallado(modelo_key, modelo_info):
         # Crear gráfico sin keys conflictivas
         fig_econ = go.Figure()
 
-        colores_escenarios = {'baseline': '#34495e',
-                              'crisis': '#e74c3c', 'bonanza': '#27ae60'}
+        colores_escenarios = {
+            "baseline": "#34495e",
+            "crisis": "#e74c3c",
+            "bonanza": "#27ae60",
+        }
 
-        for esc in ['baseline', 'crisis', 'bonanza']:
+        for esc in ["baseline", "crisis", "bonanza"]:
             if esc in st.session_state.resultados_dict:
                 resultados = st.session_state.resultados_dict[esc]
-                if modelo_key in resultados['modelos_externos']:
-                    datos_modelo = resultados['modelos_externos'][modelo_key]['con_pca']
+                if modelo_key in resultados["modelos_externos"]:
+                    datos_modelo = resultados["modelos_externos"][modelo_key]["con_pca"]
 
-                    fig_econ.add_trace(go.Box(
-                        y=datos_modelo,
-                        name=ESCENARIOS_ECONOMICOS[esc]['nombre'],
-                        boxmean='sd',
-                        marker_color=colores_escenarios[esc],
-                        opacity=0.7
-                    ))
+                    fig_econ.add_trace(
+                        go.Box(
+                            y=datos_modelo,
+                            name=ESCENARIOS_ECONOMICOS[esc]["nombre"],
+                            boxmean="sd",
+                            marker_color=colores_escenarios[esc],
+                            opacity=0.7,
+                        )
+                    )
 
         fig_econ.update_layout(
             title=f'Bootstrap Distribution - {modelo_info["nombre"]}',
-            yaxis_title='Projected Saving',
+            yaxis_title="Projected Saving",
             height=450,
-            showlegend=True
+            showlegend=True,
         )
 
         # Usar container para evitar conflictos
@@ -814,21 +1353,25 @@ def crear_tabla_estadisticas_modelo(modelo_key):
 
     model_stats = []
 
-    for esc in ['baseline', 'crisis', 'bonanza']:
+    for esc in ["baseline", "crisis", "bonanza"]:
         if esc in st.session_state.resultados_dict:
             resultados = st.session_state.resultados_dict[esc]
-            if modelo_key in resultados['modelos_externos']:
-                original_data = resultados['modelos_externos'][modelo_key]['original']
-                pca_data = resultados['modelos_externos'][modelo_key]['con_pca']
+            if modelo_key in resultados["modelos_externos"]:
+                original_data = resultados["modelos_externos"][modelo_key]["original"]
+                pca_data = resultados["modelos_externos"][modelo_key]["con_pca"]
 
                 original_mean = float(np.mean(original_data))
                 pca_mean = float(np.mean(pca_data))
-                impact_pct = float(
-                    ((pca_mean - original_mean) / original_mean) * 100) if original_mean != 0 else 0.0
+                impact_pct = (
+                    float(((pca_mean - original_mean) / original_mean) * 100)
+                    if original_mean != 0
+                    else 0.0
+                )
 
                 # Calcular intervalo de confianza del impacto
-                impact_values = [(p - o) / o * 100 for p,
-                                 o in zip(pca_data, original_data) if o != 0]
+                impact_values = [
+                    (p - o) / o * 100 for p, o in zip(pca_data, original_data) if o != 0
+                ]
                 if impact_values:
                     ci_lower = float(np.percentile(impact_values, 2.5))
                     ci_upper = float(np.percentile(impact_values, 97.5))
@@ -836,20 +1379,21 @@ def crear_tabla_estadisticas_modelo(modelo_key):
                 else:
                     ci_lower = ci_upper = std_impact = 0.0
 
-                model_stats.append({
-                    'Scenario': str(ESCENARIOS_ECONOMICOS[esc]['nombre']),
-                    'Impact_Mean_%': impact_pct,
-                    'CI_Lower_%': ci_lower,
-                    'CI_Upper_%': ci_upper,
-                    'Bootstrap_Std_%': std_impact,
-                    'Direction': str('Positive' if impact_pct > 0 else 'Negative')
-                })
+                model_stats.append(
+                    {
+                        "Scenario": str(ESCENARIOS_ECONOMICOS[esc]["nombre"]),
+                        "Impact_Mean_%": impact_pct,
+                        "CI_Lower_%": ci_lower,
+                        "CI_Upper_%": ci_upper,
+                        "Bootstrap_Std_%": std_impact,
+                        "Direction": str("Positive" if impact_pct > 0 else "Negative"),
+                    }
+                )
 
     if model_stats:
         model_df = pd.DataFrame(model_stats)
         # Formatear números para mejor visualización
-        numeric_cols = ['Impact_Mean_%', 'CI_Lower_%',
-                        'CI_Upper_%', 'Bootstrap_Std_%']
+        numeric_cols = ["Impact_Mean_%", "CI_Lower_%", "CI_Upper_%", "Bootstrap_Std_%"]
         for col in numeric_cols:
             model_df[col] = model_df[col].round(2)
 
@@ -867,41 +1411,45 @@ def mostrar_grafico_impacto_comparativo(modelo_key):
     impactos = []
     colores = []
 
-    color_map = {'baseline': '#34495e',
-                 'crisis': '#e74c3c', 'bonanza': '#27ae60'}
+    color_map = {"baseline": "#34495e", "crisis": "#e74c3c", "bonanza": "#27ae60"}
 
-    for esc in ['baseline', 'crisis', 'bonanza']:
+    for esc in ["baseline", "crisis", "bonanza"]:
         if esc in st.session_state.resultados_dict:
             resultados = st.session_state.resultados_dict[esc]
-            if modelo_key in resultados['modelos_externos']:
+            if modelo_key in resultados["modelos_externos"]:
                 original = np.mean(
-                    resultados['modelos_externos'][modelo_key]['original'])
+                    resultados["modelos_externos"][modelo_key]["original"]
+                )
                 pca_enhanced = np.mean(
-                    resultados['modelos_externos'][modelo_key]['con_pca'])
-                impact_pct = ((pca_enhanced - original) /
-                              original) * 100 if original != 0 else 0
+                    resultados["modelos_externos"][modelo_key]["con_pca"]
+                )
+                impact_pct = (
+                    ((pca_enhanced - original) / original) * 100 if original != 0 else 0
+                )
 
-                escenarios.append(ESCENARIOS_ECONOMICOS[esc]['nombre'])
+                escenarios.append(ESCENARIOS_ECONOMICOS[esc]["nombre"])
                 impactos.append(impact_pct)
                 colores.append(color_map[esc])
 
     if escenarios:
-        fig_impact = go.Figure(data=[
-            go.Bar(
-                x=escenarios,
-                y=impactos,
-                marker_color=colores,
-                text=[f'{imp:+.1f}%' for imp in impactos],
-                textposition='auto',
-                opacity=0.8
-            )
-        ])
+        fig_impact = go.Figure(
+            data=[
+                go.Bar(
+                    x=escenarios,
+                    y=impactos,
+                    marker_color=colores,
+                    text=[f"{imp:+.1f}%" for imp in impactos],
+                    textposition="auto",
+                    opacity=0.8,
+                )
+            ]
+        )
 
         fig_impact.update_layout(
             title=f'PCA Impact on {MODELOS_EXTERNOS[modelo_key]["nombre"]}',
-            yaxis_title='Impact Percentage (%)',
+            yaxis_title="Impact Percentage (%)",
             height=300,
-            showlegend=False
+            showlegend=False,
         )
 
         # Añadir línea de referencia en 0
@@ -921,9 +1469,9 @@ def mostrar_metricas_impacto(modelo_key):
     all_pca = []
 
     for esc in st.session_state.resultados_dict.values():
-        if modelo_key in esc['modelos_externos']:
-            original_data = esc['modelos_externos'][modelo_key]['original']
-            pca_data = esc['modelos_externos'][modelo_key]['con_pca']
+        if modelo_key in esc["modelos_externos"]:
+            original_data = esc["modelos_externos"][modelo_key]["original"]
+            pca_data = esc["modelos_externos"][modelo_key]["con_pca"]
 
             for orig, pca in zip(original_data, pca_data):
                 if orig != 0:
@@ -966,22 +1514,28 @@ def create_economic_impact_matrix():
 
     for escenario, resultados in st.session_state.resultados_dict.items():
         for modelo_key, modelo_info_matrix in MODELOS_EXTERNOS.items():
-            if modelo_key in resultados['modelos_externos']:
+            if modelo_key in resultados["modelos_externos"]:
                 original_mean = np.mean(
-                    resultados['modelos_externos'][modelo_key]['original'])
+                    resultados["modelos_externos"][modelo_key]["original"]
+                )
                 pca_mean = np.mean(
-                    resultados['modelos_externos'][modelo_key]['con_pca'])
+                    resultados["modelos_externos"][modelo_key]["con_pca"]
+                )
                 impact_pct = ((pca_mean - original_mean) / original_mean) * 100
 
-                impact_matrix.append({
-                    'Scenario': str(escenario.title()),
-                    'Economic_Model': str(modelo_info_matrix['nombre']),
-                    'Original_Mean_Saving': float(original_mean),
-                    'PCA_Enhanced_Mean_Saving': float(pca_mean),
-                    'Absolute_Impact': float(pca_mean - original_mean),
-                    'Relative_Impact_%': float(impact_pct),
-                    'Impact_Direction': str('Positive' if impact_pct > 0 else 'Negative')
-                })
+                impact_matrix.append(
+                    {
+                        "Scenario": str(escenario.title()),
+                        "Economic_Model": str(modelo_info_matrix["nombre"]),
+                        "Original_Mean_Saving": float(original_mean),
+                        "PCA_Enhanced_Mean_Saving": float(pca_mean),
+                        "Absolute_Impact": float(pca_mean - original_mean),
+                        "Relative_Impact_%": float(impact_pct),
+                        "Impact_Direction": str(
+                            "Positive" if impact_pct > 0 else "Negative"
+                        ),
+                    }
+                )
 
     if impact_matrix:
         impact_df = pd.DataFrame(impact_matrix)
@@ -991,17 +1545,17 @@ def create_economic_impact_matrix():
             try:
                 if isinstance(val, (int, float)) and not pd.isna(val):
                     if val > 10:
-                        return 'background-color: #27ae60; color: white'
+                        return "background-color: #27ae60; color: white"
                     elif val < -10:
-                        return 'background-color: #e74c3c; color: white'
+                        return "background-color: #e74c3c; color: white"
                     elif abs(val) > 5:
-                        return 'background-color: #f39c12; color: white'
+                        return "background-color: #f39c12; color: white"
             except:
                 pass
-            return ''
+            return ""
 
         styled_df = impact_df.style.applymap(
-            color_impact_safe, subset=['Relative_Impact_%']
+            color_impact_safe, subset=["Relative_Impact_%"]
         )
         st.dataframe(styled_df, use_container_width=True)
 
@@ -1016,18 +1570,20 @@ def display_bootstrap_diagnostics_analysis():
         escenario_diag = st.selectbox(
             "Select scenario for detailed Bootstrap diagnostics:",
             options=list(st.session_state.resultados_dict.keys()),
-            format_func=lambda x: ESCENARIOS_ECONOMICOS[x]['nombre'],
-            key="selectbox_diagnostics_escenario"  # KEY ÚNICO
+            format_func=lambda x: ESCENARIOS_ECONOMICOS[x]["nombre"],
+            key="selectbox_diagnostics_escenario",  # KEY ÚNICO
         )
 
         if escenario_diag in st.session_state.resultados_dict:
             resultados_diag = st.session_state.resultados_dict[escenario_diag]
 
             # Crear gráfico de diagnósticos Bootstrap
-            fig_diagnostics = crear_grafico_bootstrap_diagnostics(
-                resultados_diag)
-            st.plotly_chart(fig_diagnostics, use_container_width=True,
-                            key=f"diagnostics_{escenario_diag}")
+            fig_diagnostics = crear_grafico_bootstrap_diagnostics(resultados_diag)
+            st.plotly_chart(
+                fig_diagnostics,
+                use_container_width=True,
+                key=f"diagnostics_{escenario_diag}",
+            )
 
             # Estadísticas de diagnóstico
             col1, col2 = st.columns(2)
@@ -1035,36 +1591,40 @@ def display_bootstrap_diagnostics_analysis():
             with col1:
                 st.markdown("#### Bootstrap Quality Metrics")
 
-                pca_values = np.array(resultados_diag['pca_values'])
+                pca_values = np.array(resultados_diag["pca_values"])
 
                 # Test de normalidad en muestra Bootstrap
                 if len(pca_values) > 5000:
-                    sample_for_test = np.random.choice(
-                        pca_values, 5000, replace=False)
+                    sample_for_test = np.random.choice(pca_values, 5000, replace=False)
                 else:
                     sample_for_test = pca_values
 
                 import scipy.stats as sp_stats
+
                 shapiro_stat, shapiro_p = sp_stats.shapiro(sample_for_test)
 
                 # Estadísticas de convergencia
                 n_samples = len(pca_values)
                 se_bootstrap = np.std(pca_values) / np.sqrt(n_samples)
 
-                quality_metrics = pd.DataFrame([
-                    ['Bootstrap Iterations', int(len(pca_values))],
-                    ['Bootstrap SE', float(se_bootstrap)],
-                    ['Shapiro-Wilk Stat', float(shapiro_stat)],
-                    ['Shapiro p-value', float(shapiro_p)],
-                    ['Distribution', str(
-                        'Normal' if shapiro_p > 0.05 else 'Non-normal')],
-                    ['Effective Sample Size', int(len(np.unique(pca_values)))]
-                ], columns=['Metric', 'Value'])
+                quality_metrics = pd.DataFrame(
+                    [
+                        ["Bootstrap Iterations", int(len(pca_values))],
+                        ["Bootstrap SE", float(se_bootstrap)],
+                        ["Shapiro-Wilk Stat", float(shapiro_stat)],
+                        ["Shapiro p-value", float(shapiro_p)],
+                        [
+                            "Distribution",
+                            str("Normal" if shapiro_p > 0.05 else "Non-normal"),
+                        ],
+                        ["Effective Sample Size", int(len(np.unique(pca_values)))],
+                    ],
+                    columns=["Metric", "Value"],
+                )
 
                 # Convertir tipos explícitamente para evitar error Arrow
-                quality_metrics['Metric'] = quality_metrics['Metric'].astype(
-                    str)
-                quality_metrics['Value'] = quality_metrics['Value'].astype(str)
+                quality_metrics["Metric"] = quality_metrics["Metric"].astype(str)
+                quality_metrics["Value"] = quality_metrics["Value"].astype(str)
 
                 st.dataframe(quality_metrics, use_container_width=True)
 
@@ -1074,25 +1634,32 @@ def display_bootstrap_diagnostics_analysis():
                 # Análisis de convergencia Bootstrap
                 window_size = min(100, len(pca_values) // 20)
                 if window_size > 1:
-                    moving_std = pd.Series(pca_values).rolling(
-                        window=window_size).std()
+                    moving_std = pd.Series(pca_values).rolling(window=window_size).std()
                     final_stability = np.std(
-                        moving_std.dropna().tail(len(moving_std)//4))
+                        moving_std.dropna().tail(len(moving_std) // 4)
+                    )
 
-                    convergence_metrics = pd.DataFrame([
-                        ['Final Mean', float(np.mean(pca_values[-500:]))],
-                        ['Final Std', float(np.std(pca_values[-500:]))],
-                        ['Moving Std Stability', float(final_stability)],
-                        ['Convergence Ratio', float(
-                            final_stability / np.std(pca_values))],
-                        ['Bootstrap Error', float(se_bootstrap)]
-                    ], columns=['Metric', 'Value'])
+                    convergence_metrics = pd.DataFrame(
+                        [
+                            ["Final Mean", float(np.mean(pca_values[-500:]))],
+                            ["Final Std", float(np.std(pca_values[-500:]))],
+                            ["Moving Std Stability", float(final_stability)],
+                            [
+                                "Convergence Ratio",
+                                float(final_stability / np.std(pca_values)),
+                            ],
+                            ["Bootstrap Error", float(se_bootstrap)],
+                        ],
+                        columns=["Metric", "Value"],
+                    )
 
                     # Convertir tipos explícitamente
-                    convergence_metrics['Metric'] = convergence_metrics['Metric'].astype(
-                        str)
-                    convergence_metrics['Value'] = convergence_metrics['Value'].round(
-                        6).astype(str)
+                    convergence_metrics["Metric"] = convergence_metrics[
+                        "Metric"
+                    ].astype(str)
+                    convergence_metrics["Value"] = (
+                        convergence_metrics["Value"].round(6).astype(str)
+                    )
 
                     st.dataframe(convergence_metrics, use_container_width=True)
 
@@ -1105,8 +1672,8 @@ def display_single_scenario_analysis():
     resultados = st.session_state.resultados_dict[escenario_key]
 
     # Mostrar estadísticas Bootstrap básicas
-    if 'bootstrap_stats' in resultados:
-        stats = resultados['bootstrap_stats']
+    if "bootstrap_stats" in resultados:
+        stats = resultados["bootstrap_stats"]
 
         col1, col2, col3, col4 = st.columns(4)
 
@@ -1116,28 +1683,30 @@ def display_single_scenario_analysis():
 
         with col2:
             st.metric("CI Lower (2.5%)", f"{stats.get('pca_ci_lower', 0):.4f}")
-            st.metric("CI Upper (97.5%)",
-                      f"{stats.get('pca_ci_upper', 0):.4f}")
+            st.metric("CI Upper (97.5%)", f"{stats.get('pca_ci_upper', 0):.4f}")
 
         with col3:
-            st.metric("Bias-Corrected Mean",
-                      f"{stats.get('bias_corrected_mean', 0):.4f}")
-            bootstrap_se = stats.get('pca_std', 0) / \
-                np.sqrt(stats.get('bootstrap_n', 1))
+            st.metric(
+                "Bias-Corrected Mean", f"{stats.get('bias_corrected_mean', 0):.4f}"
+            )
+            bootstrap_se = stats.get("pca_std", 0) / np.sqrt(
+                stats.get("bootstrap_n", 1)
+            )
             st.metric("Bootstrap SE", f"{bootstrap_se:.6f}")
 
         with col4:
-            st.metric("Bootstrap Iterations",
-                      f"{stats.get('bootstrap_n', 0):,}")
-            original_n = stats.get('original_n', 0)
+            st.metric("Bootstrap Iterations", f"{stats.get('bootstrap_n', 0):,}")
+            original_n = stats.get("original_n", 0)
             st.metric("Original Sample N", f"{original_n}")
 
     # Pestañas para análisis detallado de escenario único
-    tab1, tab2, tab3 = st.tabs([
-        "Análisis Bootstrap Detallado",
-        "📊 Visualización 3D",
-        "📍 Análisis Cuadrantes"  # NUEVA PESTAÑA
-    ])
+    tab1, tab2, tab3 = st.tabs(
+        [
+            "Análisis Bootstrap Detallado",
+            "📊 Visualización 3D",
+            "📍 Análisis Cuadrantes",  # NUEVA PESTAÑA
+        ]
+    )
 
     with tab1:
         display_single_scenario_detailed_analysis(resultados)
@@ -1159,48 +1728,48 @@ def display_single_scenario_detailed_analysis(resultados):
 
     # Gráficos para escenario único
     fig_single_bootstrap = make_subplots(
-        rows=2, cols=2,
+        rows=2,
+        cols=2,
         subplot_titles=[
-            'Bootstrap PCA Distribution',
-            'Bootstrap Confidence Interval',
-            'Economic Models Bootstrap Impact',
-            'Bootstrap Convergence'
-        ]
+            "Bootstrap PCA Distribution",
+            "Bootstrap Confidence Interval",
+            "Economic Models Bootstrap Impact",
+            "Bootstrap Convergence",
+        ],
     )
 
     # 1. Distribución Bootstrap
     fig_single_bootstrap.add_trace(
         go.Histogram(
-            x=resultados['pca_values'],
-            nbinsx=40,
-            name='Bootstrap PCA',
-            opacity=0.7
+            x=resultados["pca_values"], nbinsx=40, name="Bootstrap PCA", opacity=0.7
         ),
-        row=1, col=1
+        row=1,
+        col=1,
     )
 
     # 2. Intervalo de confianza
-    if 'bootstrap_stats' in resultados:
-        stats = resultados['bootstrap_stats']
-        mean_val = stats.get('pca_mean', 0)
-        ci_lower = stats.get('pca_ci_lower', 0)
-        ci_upper = stats.get('pca_ci_upper', 0)
+    if "bootstrap_stats" in resultados:
+        stats = resultados["bootstrap_stats"]
+        mean_val = stats.get("pca_mean", 0)
+        ci_lower = stats.get("pca_ci_lower", 0)
+        ci_upper = stats.get("pca_ci_upper", 0)
 
         fig_single_bootstrap.add_trace(
             go.Scatter(
-                x=['Bootstrap Estimate'],
+                x=["Bootstrap Estimate"],
                 y=[mean_val],
                 error_y=dict(
-                    type='data',
+                    type="data",
                     symmetric=False,
                     arrayminus=[mean_val - ci_lower],
-                    array=[ci_upper - mean_val]
+                    array=[ci_upper - mean_val],
                 ),
-                mode='markers',
-                marker=dict(size=15, color='blue'),
-                name='95% CI'
+                mode="markers",
+                marker=dict(size=15, color="blue"),
+                name="95% CI",
             ),
-            row=1, col=2
+            row=1,
+            col=2,
         )
 
     # 3. Impacto en modelos económicos
@@ -1208,11 +1777,11 @@ def display_single_scenario_detailed_analysis(resultados):
     modelo_nombres = []
 
     for modelo_key, modelo_info_single in MODELOS_EXTERNOS.items():
-        if modelo_key in resultados['modelos_externos']:
+        if modelo_key in resultados["modelos_externos"]:
             original_mean = np.mean(
-                resultados['modelos_externos'][modelo_key]['original'])
-            pca_mean = np.mean(
-                resultados['modelos_externos'][modelo_key]['con_pca'])
+                resultados["modelos_externos"][modelo_key]["original"]
+            )
+            pca_mean = np.mean(resultados["modelos_externos"][modelo_key]["con_pca"])
             impact_pct = ((pca_mean - original_mean) / original_mean) * 100
 
             modelo_impactos.append(impact_pct)
@@ -1223,16 +1792,16 @@ def display_single_scenario_detailed_analysis(resultados):
             go.Bar(
                 x=modelo_nombres,
                 y=modelo_impactos,
-                name='Economic Impact %',
-                marker_color='green'
+                name="Economic Impact %",
+                marker_color="green",
             ),
-            row=2, col=1
+            row=2,
+            col=1,
         )
 
     # 4. Convergencia Bootstrap
-    pca_values = np.array(resultados['pca_values'])
-    cumulative_means = np.cumsum(pca_values) / \
-        np.arange(1, len(pca_values) + 1)
+    pca_values = np.array(resultados["pca_values"])
+    cumulative_means = np.cumsum(pca_values) / np.arange(1, len(pca_values) + 1)
     sample_indices = np.arange(1, len(pca_values) + 1)
 
     # Submuestrear para claridad visual
@@ -1242,17 +1811,16 @@ def display_single_scenario_detailed_analysis(resultados):
         go.Scatter(
             x=sample_indices[::step],
             y=cumulative_means[::step],
-            mode='lines',
-            name='Cumulative Mean',
-            line=dict(color='red', width=2)
+            mode="lines",
+            name="Cumulative Mean",
+            line=dict(color="red", width=2),
         ),
-        row=2, col=2
+        row=2,
+        col=2,
     )
 
     fig_single_bootstrap.update_layout(
-        height=800,
-        showlegend=True,
-        title_text=f"Bootstrap Analysis - Single Scenario"
+        height=800, showlegend=True, title_text=f"Bootstrap Analysis - Single Scenario"
     )
 
     st.plotly_chart(fig_single_bootstrap, use_container_width=True)
@@ -1262,21 +1830,23 @@ def display_single_scenario_detailed_analysis(resultados):
 
     impact_matrix = []
     for modelo_key, modelo_info_matrix in MODELOS_EXTERNOS.items():
-        if modelo_key in resultados['modelos_externos']:
+        if modelo_key in resultados["modelos_externos"]:
             original_mean = np.mean(
-                resultados['modelos_externos'][modelo_key]['original'])
-            pca_mean = np.mean(
-                resultados['modelos_externos'][modelo_key]['con_pca'])
+                resultados["modelos_externos"][modelo_key]["original"]
+            )
+            pca_mean = np.mean(resultados["modelos_externos"][modelo_key]["con_pca"])
             impact_pct = ((pca_mean - original_mean) / original_mean) * 100
 
-            impact_matrix.append({
-                'Economic_Model': modelo_info_matrix['nombre'],
-                'Original_Mean_Saving': original_mean,
-                'PCA_Enhanced_Mean_Saving': pca_mean,
-                'Absolute_Impact': pca_mean - original_mean,
-                'Relative_Impact_%': impact_pct,
-                'Impact_Direction': 'Positive' if impact_pct > 0 else 'Negative'
-            })
+            impact_matrix.append(
+                {
+                    "Economic_Model": modelo_info_matrix["nombre"],
+                    "Original_Mean_Saving": original_mean,
+                    "PCA_Enhanced_Mean_Saving": pca_mean,
+                    "Absolute_Impact": pca_mean - original_mean,
+                    "Relative_Impact_%": impact_pct,
+                    "Impact_Direction": "Positive" if impact_pct > 0 else "Negative",
+                }
+            )
 
     if impact_matrix:
         impact_df = pd.DataFrame(impact_matrix)
@@ -1285,22 +1855,21 @@ def display_single_scenario_detailed_analysis(resultados):
         def color_impact(val):
             if isinstance(val, (int, float)):
                 if val > 10:
-                    return 'background-color: #27ae60; color: white'
+                    return "background-color: #27ae60; color: white"
                 elif val < -10:
-                    return 'background-color: #e74c3c; color: white'
+                    return "background-color: #e74c3c; color: white"
                 elif abs(val) > 5:
-                    return 'background-color: #f39c12; color: white'
-            return ''
+                    return "background-color: #f39c12; color: white"
+            return ""
 
-        styled_df = impact_df.style.applymap(
-            color_impact, subset=['Relative_Impact_%']
-        )
+        styled_df = impact_df.style.applymap(color_impact, subset=["Relative_Impact_%"])
         st.dataframe(styled_df, use_container_width=True)
 
 
 def display_footer():
     """Muestra el footer de la aplicación"""
-    st.markdown("""
+    st.markdown(
+        """
     <style>
         .footer {
             position: fixed;
@@ -1325,7 +1894,9 @@ def display_footer():
         <p>Por MSc. Jesús F. Salazar Rojas</p>
         <p>Propensión Conductual al Ahorro (PCA) © 2025</p>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 
 
 if __name__ == "__main__":

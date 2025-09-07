@@ -160,36 +160,58 @@ def crear_cuadrantes_optimizado(datos, escenario):
 
 
 def mostrar_estadisticas_cuadrantes_simple(datos):
-    """Muestra estadísticas simples por cuadrante"""
-
-    st.markdown("#### Distribución por Cuadrante y Sesgo")
-
-    # Crear tabla cruzada simple
-    tabla = pd.crosstab(datos['cuadrante'],
-                        datos['sesgo_dominante'], margins=True)
-
-    # Mostrar como DataFrame simple
-    st.dataframe(tabla, use_container_width=True)
-
-    # Gráfico de barras simple
+    """Estadísticas de cuadrantes mejoradas con etiquetas claras"""
+    
+    st.markdown("#### Distribución por Cuadrante y Sesgo Dominante")
+    
+    # Crear tabla cruzada con totales
+    tabla = pd.crosstab(datos['cuadrante'], datos['sesgo_dominante'], margins=True)
+    
+    # Renombrar para claridad
+    tabla.index.name = "Cuadrante"
+    tabla.columns.name = "Sesgo Dominante"
+    
+    # Mostrar tabla con formato optimizado
+    st.markdown("**📊 Distribución de Observaciones (Frecuencia Absoluta)**")
+    st.dataframe(tabla, use_container_width=False)  # No usar todo el ancho
+    
+    # Crear tabla de porcentajes
+    tabla_pct = pd.crosstab(datos['cuadrante'], datos['sesgo_dominante'], normalize='index') * 100
+    tabla_pct = tabla_pct.round(1)
+    
+    st.markdown("**📈 Distribución Relativa por Cuadrante (%)**")
+    st.dataframe(tabla_pct, use_container_width=False)
+    
+    # Gráfico de barras CORREGIDO - barras más juntas
     fig_bars = go.Figure()
-
+    
     cuadrantes_counts = datos['cuadrante'].value_counts().sort_index()
-
+    
     fig_bars.add_trace(go.Bar(
-        x=cuadrantes_counts.index,
+        x=[f'Cuadrante {c}' for c in cuadrantes_counts.index],
         y=cuadrantes_counts.values,
         marker_color=['#3498db', '#e74c3c', '#f39c12', '#2ecc71'],
-        text=cuadrantes_counts.values,
-        textposition='auto'
+        text=[f'{v} obs.' for v in cuadrantes_counts.values],  # Clarificar que son observaciones
+        textposition='auto',
+        width=0.6  # BARRAS MÁS JUNTAS
     ))
-
+    
     fig_bars.update_layout(
-        title='Distribución por Cuadrante',
-        xaxis_title='Cuadrante',
-        yaxis_title='Frecuencia',
-        height=300,
-        showlegend=False
+        title='Distribución de Observaciones por Cuadrante',
+        xaxis_title='Cuadrante PCA-PSE',
+        yaxis_title='Número de Observaciones',
+        height=350,
+        showlegend=False,
+        xaxis=dict(categoryorder='category ascending')  # Orden correcto
     )
-
+    
     st.plotly_chart(fig_bars, use_container_width=True)
+    
+    # Interpretación clara
+    st.markdown("""
+    **💡 Interpretación de Cuadrantes:**
+    - **Cuadrante I (PCA+/PSE+):** Alta propensión conductual al ahorro y Alto Perfil Socioeconomico
+    - **Cuadrante II (PCA+/PSE-):** Alta propensión conductual al ahorro pese a Bajo Perfil Socioeconomico  
+    - **Cuadrante III (PCA-/PSE-):** Baja propensión conductual al ahorro con Bajo Perfil Socioeconomico
+    - **Cuadrante IV (PCA-/PSE+):** Baja propensión conductual al ahorro pese a Alto Perfil Socioeconomico
+    """)
