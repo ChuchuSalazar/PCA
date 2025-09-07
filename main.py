@@ -355,25 +355,6 @@ def display_ucab_logo():
             logo = Image.open("Logo_UCAB_1.png")
 
             # Container con efecto degradado
-            st.markdown(
-                """
-            <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%); 
-                        padding: 3rem 2rem; border-radius: 20px; text-align: center; 
-                        box-shadow: 0 15px 35px rgba(30, 60, 114, 0.3), 0 5px 15px rgba(0,0,0,0.1);
-                        margin: 2rem 0; border: 2px solid rgba(255,255,255,0.1);">
-                <div style="background: rgba(255,255,255,0.1); padding: 2rem; border-radius: 15px; 
-                           backdrop-filter: blur(10px);">
-                    <h2 style="color: white; margin: 0 0 1rem 0; font-weight: 600; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
-                        Universidad Católica Andrés Bello
-                    </h2>
-                    <h3 style="color: rgba(255,255,255,0.9); margin: 0; font-weight: 400; font-size: 1.2rem;">
-                        Doctorado en Economía • Simulador PCA v3.2
-                    </h3>
-                </div>
-            </div>
-            """,
-                unsafe_allow_html=True,
-            )
 
             # Logo centrado
             col1, col2, col3 = st.columns([1, 2, 1])
