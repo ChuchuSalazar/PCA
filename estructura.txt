@@ -1,0 +1,25 @@
+proyecto_pca/
+├── main.py                    # Archivo principal (interfaz Streamlit)
+├── tutorial_gamificado.py  ← NUEVO ARCHIVO
+├── config/
+│   ├── __init__.py
+│   ├── constants.py           # Constantes y configuraciones OK
+│   └── styles.py             # Estilos CSS OK
+├── data/
+│   ├── __init__.py
+│   ├── data_loader.py        # Carga y generación de datos OK
+│   └── data_generator.py     # Generación de datos simulados OK
+├── models/
+│   ├── __init__.py
+│   ├── bootstrap_analysis.py # Análisis Bootstrap
+│   ├── economic_models.py    # Modelos económicos externos
+│   └── pls_sem_models.py     # Modelos PLS-SEM
+├── visualization/
+│   ├── __init__.py
+│   ├── charts.py             # Gráficos y visualizaciones
+│   └── dashboard.py          # Dashboard comparativo
+├── utils/
+│   ├── __init__.py
+│   ├── statistics.py         # Funciones estadísticas
+│   └── export_utils.py       # Utilidades de exportación
+└── requirements.txt          # Dependencias

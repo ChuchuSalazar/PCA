@@ -13,10 +13,9 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
+# Al inicio del archivo main.py, con las otras importaciones
+from tutorial_gamificado import mostrar_tutorial_principal
 from plotly.subplots import make_subplots
-import streamlit as st
-import os
-
 from visualization.cuadrantes import crear_analisis_cuadrantes_completo
 from config.constants import (
     MODELOS_COEFICIENTES,
@@ -25,15 +24,21 @@ from config.constants import (
 )
 from config.styles import apply_custom_styles, get_header_html
 from data.data_loader import cargar_datos
+from data.participantes_analysis import (
+    cargar_datos_participantes,
+    crear_analisis_participantes,
+)
 from models.bootstrap_analysis import ejecutar_bootstrap_avanzado
 from visualization.dashboard import crear_dashboard_bootstrap_comparativo
 from visualization.charts import crear_grafico_bootstrap_diagnostics
+from visualization.cuadrantes import crear_analisis_cuadrantes_completo
 from visualization.charts_3d import (
     configurar_interfaz_3d,
     mostrar_informacion_sesgos_escenario,
 )
 from utils.export_utils import crear_excel_bootstrap_completo
 from utils.statistics import calcular_estadisticas_avanzadas
+
 from datetime import datetime
 
 
@@ -106,6 +111,8 @@ def initialize_session_state():
         st.session_state.last_bootstrap_hash = None
     if "bootstrap_cache" not in st.session_state:
         st.session_state.bootstrap_cache = {}
+    if "modo_tutorial" not in st.session_state:
+        st.session_state.modo_tutorial = False
 
 
 def generar_hash_parametros(grupo, escenario, n_bootstrap, analisis_comparativo):
@@ -219,6 +226,22 @@ def setup_sidebar():
 
         # Métricas asociadas al grupo
         display_model_metrics(grupo)
+        # AÑADIR ESTAS LÍNEAS:
+
+        st.markdown("---")
+        st.markdown("### 🎮 Aprendizaje Interactivo")
+        
+        # Botón del tutorial
+        if st.button("🎯 Iniciar Tutorial Gamificado", type="secondary", use_container_width=True):
+            # Activar modo tutorial
+            st.session_state.modo_tutorial = True
+            st.rerun()
+        
+        # Mostrar estado del tutorial si está disponible
+        if hasattr(st.session_state, 'puntos_totales') and st.session_state.puntos_totales > 0:
+            st.success(f"Tutorial: {st.session_state.puntos_totales} puntos")
+
+
 
         # Toggle para mostrar modelos o logo
         if st.button("🔄 Toggle PLS-SEM Models / UCAB Logo", type="secondary"):
@@ -326,6 +349,12 @@ def main_interface(
     scores_df, items_df, grupo, escenario, n_bootstrap, analisis_comparativo
 ):
     """Interfaz principal con logo UCAB"""
+    # AÑADIR ESTA VERIFICACIÓN AL INICIO:
+    # Verificar si está activo el modo tutorial
+    if getattr(st.session_state, 'modo_tutorial', False):
+        mostrar_tutorial_principal()
+        return  # No mostrar el resto de la interfaz
+
 
     # Mostrar logo UCAB o imágenes del modelo
     if st.session_state.show_model_images:
@@ -670,15 +699,16 @@ def display_multi_scenario_analysis():
         st.error("No bootstrap results available.")
         return
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs(
         [
             "Bootstrap Dashboard",
             "Confidence Intervals",
             "Bias Correction",
             "Economic Impact",
             "Bootstrap Diagnostics",
-            "📊 Análisis 3D",
-            "📍 Análisis Cuadrantes",
+            "3D Analysis",
+            "Quadrant Analysis",
+            "Descriptive Analysis",
         ]
     )
 
@@ -741,12 +771,18 @@ def display_multi_scenario_analysis():
                 st.markdown(
                     "**Nota:** Usando muestra optimizada para análisis de cuadrantes"
                 )
-                from visualization.cuadrantes import crear_analisis_cuadrantes_completo
 
                 crear_analisis_cuadrantes_completo(st.session_state.resultados_dict)
         except Exception as e:
             st.error(f"Error en análisis de cuadrantes: {str(e)}")
             st.info("Intenta seleccionar un escenario diferente.")
+
+    with tab8:  # Análisis descriptivo
+        try:
+            cargar_datos_participantes()
+            crear_analisis_participantes()
+        except Exception as e:
+            st.error(f"Error en análisis descriptivo: {str(e)}")
 
 
 def display_bootstrap_comparative_metrics():
